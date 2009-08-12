@@ -2,7 +2,29 @@ package DBIx::Sharding;
 
 use strict;
 use warnings;
+
 our $VERSION = '0.01';
+
+use base qw(Class::Data::Inheritable);
+
+__PACKAGE__->mk_classdata('config');
+
+use DBI;
+
+sub connect {
+    my ($class, $dbh_id, $args) = @_;
+    return DBI->connect($class->connect_info($dbh_id, $args));
+}
+
+sub connect_cached {
+    my ($class, $dbh_id, $args) = @_;
+    return DBI->connect($class->connect_info($dbh_id, $args));
+}
+
+sub connect_info {
+    my ($class, $dbh_id, $args) = @_;
+    ####
+}
 
 1;
 __END__
