@@ -9,11 +9,12 @@ my @config_keys = qw(host database username password);
 DBIx::Sharding->config(+{
     connect_info => +{
         LOCAL => +{
-            host => 'localhost',
-            database => 'test',
-            username => 'root',
-            password => "",
-            tx       => 1,
+            HOST => 'localhost',
+            DB => 'test',
+            USER => 'root',
+            PASS => "",
+            TX => 1,
+            RELEASE => 1,
         },
     },
     sharding => +{
