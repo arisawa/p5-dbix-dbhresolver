@@ -6,19 +6,23 @@ use Data::Dumper;
 
 my @config_keys = qw(host database username password);
 
-DBIx::Sharding->config({
-    USER_R => +{
-        host => 'db_main_s.mbga.dena.ne.jp',
-        database => 'game_user',
-        username => 'game_r',
-        password => 'game_r',
+DBIx::Sharding->config(+{
+    connect_info => +{
+        LOCAL => +{
+            host => 'localhost',
+            database => 'test',
+            username => 'root',
+            password => "",
+            tx       => 1,
+        },
+    },
+    sharding => +{
     },
 });
 
 my $config = DBIx::Sharding->config;
-my ($dsn, $user, $pass) = DBIx::Sharding->connect_info('USER_R');
+my ($dsn, $user, $pass) = DBIx::Sharding->connect_info('LOCAL');
 
-is($dsn, 'dbi:mysql:dbname=game_user;host=db_main_s.mbga.dena.ne.jp', 'dsn');
-is($user, 'game_r', 'user');
-is($pass, 'game_r', 'pass');
-
+is($dsn, 'dbi:mysql:dbname=test;host=localhost', 'dsn');
+is($user, 'root', 'user');
+is($pass, "", 'password');

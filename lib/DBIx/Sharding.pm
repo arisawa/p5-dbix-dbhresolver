@@ -23,18 +23,12 @@ sub connect_cached {
 
 sub connect_info {
     my ($class, $dbh_id) = @_;
-    my $config = $class->config->{$dbh_id};
-    my %default_attrs = (
-        RaiseError => 1,
-        PrintError => 0,
-        AutoCommit => 1,
-        Warn => 0,
-    );
+    my $info = $class->config->{connect_info}->{$dbh_id};
 
     return (
-        "dbi:mysql:dbname=$config->{database};host=$config->{host}",
-        $config->{username},
-        $config->{password},
+        "dbi:mysql:dbname=$info->{database};host=$info->{host}",
+        $info->{username},
+        $info->{password},
     );
 }
 
