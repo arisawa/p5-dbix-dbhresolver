@@ -17,6 +17,7 @@ use YAML;
 sub load {
     my ( $class, $file ) = @_;
     if ( -e $file && -r $file ) {
+        use Data::Dumper;
         $class->config( +{ connect_info => YAML::LoadFile($file) } );
     }
     else {
@@ -39,7 +40,6 @@ sub connect_cached {
 sub connect_info {
     my ( $class, $label, $args ) = @_;
 
-    my $info;
     if ( ref $args eq 'HASH' ) {
         unless ( $args->{key} && $args->{strategy} ) {
             croak "arguments require 'key', 'strategy'";
@@ -74,20 +74,6 @@ DBIx::Sharding -
 =head1 DESCRIPTION
 
 DBIx::Sharding is
-
-20:23 (zigorou) +{ connect_info => +{ DB_USER_R => [], ... }, sharding => +{ DIARY_W => +{ strategy => '+Chariot::XXX::YYY', nodes => [ qw/DIARY_1_W DIARY_2_W .../ ] } } }
-20:23 (zigorou) とか
-20:23 (zigorou) こんなデータ構造はどうか
-20:23 (zigorou) ping arisawa
-20:23 (zigorou) ping arisawa
-20:24 (zigorou) +Foo::Bar::Baz だと use Foo::Bar::Baz 相当で
-20:25 (zigorou) Foo::Bar::Baz だと use DBIx::Sharding::Strategy::Foo::Bar::Baz;
-20:25 (zigorou) tokane.
-20:26 (zigorou) DBIx::Sharding::Strategy::PartionById とかさ
-20:26 (zigorou) まぁいいや。
-20:27 (zigorou) DBIx::Sharding->config->{connect_info}->{DB_USER_R} -> [ $dsn, $user_id, $password, \%attrs ]
-20:27 (zigorou) って形で取得出来るの前提にしておきますか
-
 
 =head1 AUTHOR
 

@@ -1,5 +1,5 @@
 use strict;
-use Test::More tests => 3;
+use Test::More tests => 1;
 
 use FindBin;
 use DBIx::Sharding;
@@ -7,8 +7,19 @@ use Data::Dumper;
 
 DBIx::Sharding->load("$FindBin::Bin/db.conf.yaml");
 
-my ($dsn, $user, $pass) = DBIx::Sharding->connect_info('ADMIN_BAK');
+my $info = DBIx::Sharding->connect_info('USER_R');
 
-is($dsn, 'dbi:mysql:dbname=game_admin;host=db_admin_b.mbga.dena.ne.jp', 'dsn');
-is($user, 'game_r', 'user');
-is($pass, undef, 'password');
+is_deeply(
+    {
+        dsn => 'dbi:mysql:dbname=user;host=db_user_r.example.com',
+        user => 'hoge',
+        password => undef,
+        attrs => {
+            AutoCommit => 0,
+            PrintError => 0,
+            RaiseError => 1,
+            Warn => 0,
+        },
+    },
+    $info,
+);

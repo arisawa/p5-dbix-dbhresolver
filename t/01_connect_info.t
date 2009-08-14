@@ -1,5 +1,5 @@
 use strict;
-use Test::More tests => 9;
+use Test::More tests => 3;
 
 use DBIx::Sharding;
 use Data::Dumper;
@@ -7,34 +7,29 @@ use Data::Dumper;
 DBIx::Sharding->config(+{
     connect_info => +{
         LOCAL => +{
-            HOST => 'localhost',
-            DB => 'test',
-            USER => 'root',
-            PASS => "",
+            dsn => 'dbi:mysql:dbname=test;host=localhost',
+            user => 'root',
+            password => "",
         },
         DIARY1_W => +{
-            HOST => 'localhost',
-            DB => 'diary1_w',
-            USER => 'root',
-            PASS => "",
+            dsn => 'dbi:mysql:dbname=game_diary;host=db_dia1_m.mbga.dena.ne.jp',
+            user => 'root',
+            password => "",
         },
         DIARY2_W => +{
-            HOST => 'localhost',
-            DB => 'diary2_w',
-            USER => 'root',
-            PASS => "",
+            dsn => 'dbi:mysql:dbname=game_diary;host=db_dia2_m.mbga.dena.ne.jp',
+            user => 'root',
+            password => "",
         },
         DIARY1_R => +{
-            HOST => 'localhost',
-            DB => 'diary1_r',
-            USER => 'root',
-            PASS => "",
+            dsn => 'dbi:mysql:dbname=game_diary;host=db_dia1_s.mbga.dena.ne.jp',
+            user => 'root',
+            password => "",
         },
         DIARY2_R => +{
-            HOST => 'localhost',
-            DB => 'diary2_r',
-            USER => 'root',
-            PASS => "",
+            dsn => 'dbi:mysql:dbname=game_diary;host=db_dia2_s.mbga.dena.ne.jp',
+            user => 'root',
+            password => "",
         },
     },
     sharding => +{
@@ -44,31 +39,46 @@ DBIx::Sharding->config(+{
 });
 
 {
-    my $test = "single handle";
-    my ($dsn, $user, $pass) = DBIx::Sharding->connect_info('LOCAL');
-    is($dsn, 'dbi:mysql:dbname=test;host=localhost', "$test dsn");
-    is($user, 'root', "$test user");
-    is($pass, "", "$test password");
+    my $info = DBIx::Sharding->connect_info('LOCAL');
+    is_deeply(
+        {
+            dsn => 'dbi:mysql:dbname=test;host=localhost',
+            user => 'root',
+            password => "",
+        },
+        $info,
+        "single handle",
+    );
 }
 
 {
-    my $test = "DBIx::Sharding::Simple - 1";
-    my ($dsn, $user, $pass) = DBIx::Sharding->connect_info(
+    my $info = DBIx::Sharding->connect_info(
         'DIARY_W',
         +{ strategy => 'Simple', key => 6 },
     );
-    is($dsn, 'dbi:mysql:dbname=diary1_w;host=localhost', "$test dsn");
-    is($user, 'root', "$test user");
-    is($pass, "", "$test password");
+    is_deeply(
+        {
+            dsn => 'dbi:mysql:dbname=game_diary;host=db_dia1_m.mbga.dena.ne.jp',
+            user => 'root',
+            password => "",
+        },
+        $info,
+        "DBIx::Sharding::Simple - 1",
+    );
 }
 
 {
-    my $test = "DBIx::Sharding::Simple - 2";
-    my ($dsn, $user, $pass) = DBIx::Sharding->connect_info(
+    my $info = DBIx::Sharding->connect_info(
         'DIARY_R',
         +{ strategy => 'Simple', key => 7 },
     );
-    is($dsn, 'dbi:mysql:dbname=diary2_r;host=localhost', "$test dsn");
-    is($user, 'root', "$test user");
-    is($pass, "", "$test password");
+    is_deeply(
+        {
+            dsn => 'dbi:mysql:dbname=game_diary;host=db_dia2_s.mbga.dena.ne.jp',
+            user => 'root',
+            password => "",
+        },
+        $info,
+        "DBIx::Sharding::Simple - 2",
+    );
 }
