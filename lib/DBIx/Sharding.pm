@@ -5,7 +5,7 @@ use warnings;
 use Carp;
 use UNIVERSAL::require;
 
-our $VERSION = '0.01';
+our $VERSION = '0.01_01';
 
 use base qw(Class::Data::Inheritable);
 
@@ -16,13 +16,12 @@ use YAML;
 
 sub load {
     my ( $class, $file ) = @_;
-    if ( -e $file && -r $file ) {
-        use Data::Dumper;
-        $class->config( +{ connect_info => YAML::LoadFile($file) } );
+
+    unless ( -e $file && -r $file ) {
+	croak $!;
     }
-    else {
-        croak $!;
-    }
+
+    $class->config( +{ connect_info => YAML::LoadFile($file) } );
 }
 
 sub connect {
@@ -65,21 +64,118 @@ __END__
 
 =head1 NAME
 
-DBIx::Sharding -
+DBIx::Sharding - Pluggable library handles many databases aka Database Sharding.
 
 =head1 SYNOPSIS
 
   use DBIx::Sharding;
 
+  DBIx::Sharding->config(+{
+    connect_info => +{
+      MASTER => +{
+        dsn => 'dbi:mysql:dbname=main;host=master',
+        user => 'root',
+        password => '',
+        attrs => +{ RaiseError => 1, AutoCommit => 0, }
+      },
+      SLAVE1 => +{
+        dsn => 'dbi:mysql:dbname=main;host=slave1',
+        user => 'root',
+        password => '',
+        attrs => +{ RaiseError => 1, AutoCommit => 0, }
+      },
+      SLAVE2 => +{
+        dsn => 'dbi:mysql:dbname=main;host=slave2',
+        user => 'root',
+        password => '',
+        attrs => +{ RaiseError => 1, AutoCommit => 0, }
+      },
+      HEAVY_MASTER1 => +{
+        dsn => 'dbi:mysql:dbname=heavy;host=haevy_master1',
+        user => 'root',
+        password => '',
+        attrs => +{ RaiseError => 1, AutoCommit => 0, }
+      },
+      HEAVY_MASTER2 => +{
+        dsn => 'dbi:mysql:dbname=heavy;host=heavy_master2',
+        user => 'root',
+        password => '',
+        attrs => +{ RaiseError => 1, AutoCommit => 0, }
+      },
+    },
+    sharding => +{
+      SLAVE => [ qw/SLAVE1 SLAVE2/ ],
+      HEAVY_MASTER => [ qw/HEAVY_MASTER1 HEAVY_MASTER2/ ]
+    },
+  });
+
+  my $master_conn_info = DBIx::Sharding->connect_info('MASTER');
+  my $master_dbh       = DBIx::Sharding->connect('MASTER');
+
+  my ($even_num, $odd_num) = (100, 101);
+
+  ### Using DBIx::Sharding::Strategy::Simple
+  my $heavy1_conn_info = DBIx::Sharding->connect_info('HEAVY_MASTER', +{ strategy => 'Simple', key => $even_num });
+  my $heavy2_dbh       = DBIx::Sharding->connect_cached('HEAVY_MASTER', +{ strategy => 'Simple', key => $odd_num });
+
+  ### Using DBIx::Sharding::Strategy::RoundRobin
+  my $slave_dbh        = DBIx::Sharding->connect('SLAVE', +{ strategy => 'RoundRobin' });
+
 =head1 DESCRIPTION
 
-DBIx::Sharding is
+DBIx::Sharding is pluggable library handles many databases as known as Database Sharding Approach.
+
+It can retrieve L<DBI>'s database handle object or connection infomations (dsn, user, credential...) by labeled name using connect(), connect_cached(), connect_info() method,
+and treat same cluster consists many nodes as one labeled name, choose fetching strategy.
+
+Sharding strategy is pluggable, so you can make custom storategy easily.
+
+=head1 METHODS
+
+=head2 load($yaml_file_path)
+
+Load config file formatterd yaml.
+
+=head2 config(\%config)
+
+Load config. (See SYNOPSYS)
+
+=head2 connect($label, \%args)
+
+Retrieve database handle. see below about \%args details.
+
+=over
+
+=item strategy
+
+Specify strategy module name suffix. Default strategy module is prefixed 'DBIx::Sharding::Strategy::'.
+If you want to make custom strategy not prefixed 'DBIx::Sharding::Strategy::', add '+' prefixed module name such as '+MyApp::Strategy::Custom'.
+
+=item key
+
+Strategy module uses hint choosing node.
+
+=back
+
+=head2 connect_cached($label, \%args)
+
+Retrieve database handle using DBI::connect_cached(). \%args is same as connect().
+
+=head2 connect_info($label, \%args)
+
+Retrieve connection info as HASHREF. \%args is same as connect().
 
 =head1 AUTHOR
 
 Kosuke Arisawa E<lt>arisawa@gmail.comE<gt>
 
 =head1 SEE ALSO
+
+=over
+
+=item L<DBI>
+
+=back
 
 =head1 LICENSE
 
