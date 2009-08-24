@@ -12,7 +12,7 @@ is_deeply(
     {
         dsn => 'dbi:mysql:dbname=user;host=db_user_r.example.com',
         user => 'hoge',
-        password => undef,
+        password => "",
         attrs => {
             AutoCommit => 0,
             PrintError => 0,
