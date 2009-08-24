@@ -1,5 +1,7 @@
 use strict;
-use Test::More tests => 3;
+use Test::More;
+
+plan tests => 3;
 
 use DBIx::Sharding;
 
@@ -31,7 +33,7 @@ DBIx::Sharding->config(+{
             password => "",
         },
     },
-    sharding => +{
+    clusters => +{
         MASTER => [ qw(MASTER1 MASTER2) ],
         SLAVE  => [ qw( SLAVE1  SLAVE2) ],
     },

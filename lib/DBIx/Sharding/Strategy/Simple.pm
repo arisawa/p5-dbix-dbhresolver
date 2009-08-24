@@ -6,8 +6,8 @@ use Carp;
 
 sub connect_info {
     my ($class, $sharding, $label, $args) = @_;
-    my $nodes = $sharding->config->{sharding}->{$label};
-    my $node_label = @{ $nodes }[$args->{key} % scalar @$nodes];
+    my @nodes = $sharding->cluster($label);
+    my $node_label = $nodes[$args->{key} % scalar @nodes];
     return $sharding->connect_info($node_label);
 }
 

@@ -6,7 +6,7 @@ use warnings;
 use base qw(Class::Data::Inheritable);
 
 __PACKAGE__->mk_classdata('config');
-__PACKAGE__->config(+{});
+__PACKAGE__->config( +{} );
 
 use Carp;
 use DBI;
@@ -19,7 +19,7 @@ sub load {
     my ( $class, $file ) = @_;
 
     unless ( -e $file && -r $file ) {
-	croak $!;
+        croak $!;
     }
 
     $class->config( +{ connect_info => YAML::LoadFile($file) } );
@@ -57,6 +57,13 @@ sub connect_info {
           unless ( exists $class->config->{connect_info}->{$label} );
         return $class->config->{connect_info}->{$label};
     }
+}
+
+sub cluster {
+    my ( $class, $cluster_name ) = @_;
+    wantarray
+      ? @{ $class->config->{clusters}->{$cluster_name} }
+      : $class->config->{clusters}->{$cluster_name};
 }
 
 1;
@@ -106,7 +113,7 @@ DBIx::Sharding - Pluggable library handles many databases a.k.a Database Shardin
         attrs => +{ RaiseError => 1, AutoCommit => 0, }
       },
     },
-    sharding => +{
+    cluster => +{
       SLAVE => [ qw/SLAVE1 SLAVE2/ ],
       HEAVY_MASTER => [ qw/HEAVY_MASTER1 HEAVY_MASTER2/ ]
     },
@@ -118,8 +125,9 @@ DBIx::Sharding - Pluggable library handles many databases a.k.a Database Shardin
   my ($even_num, $odd_num) = (100, 101);
 
   ### Using DBIx::Sharding::Strategy::Simple
-  my $heavy1_conn_info = DBIx::Sharding->connect_info('HEAVY_MASTER', +{ strategy => 'Simple', key => $even_num });
-  my $heavy2_dbh       = DBIx::Sharding->connect_cached('HEAVY_MASTER', +{ strategy => 'Simple', key => $odd_num });
+  my $heavy_cluster_list = DBIx::Sharding->cluster('HEAVY_MASTER');
+  my $heavy1_conn_info   = DBIx::Sharding->connect_info('HEAVY_MASTER', +{ strategy => 'Simple', key => $even_num });
+  my $heavy2_dbh         = DBIx::Sharding->connect_cached('HEAVY_MASTER', +{ strategy => 'Simple', key => $odd_num });
 
   ### Using DBIx::Sharding::Strategy::RoundRobin
   my $slave_dbh        = DBIx::Sharding->connect('SLAVE', +{ strategy => 'RoundRobin' });
@@ -168,9 +176,15 @@ Retrieve database handle using DBI::connect_cached(). \%args is same as connect(
 
 Retrieve connection info as HASHREF. \%args is same as connect().
 
+=head2 cluster($cluster_name)
+
+Retrieve cluster member node names as Array.
+
 =head1 AUTHOR
 
 Kosuke Arisawa E<lt>arisawa@gmail.comE<gt>
+
+Toru Yamaguchi E<lt>zigorou@cpan.orgE<gt>
 
 =head1 SEE ALSO
 
