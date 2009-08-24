@@ -15,6 +15,8 @@ sub connect_info {
 
 __END__
 
+=for stopwords sharding
+
 =head1 NAME
 
 DBIx::Sharding::Strategy::Simple - Key based sharding strategy.

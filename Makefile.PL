@@ -2,12 +2,26 @@ use inc::Module::Install;
 name 'DBIx-Sharding';
 all_from 'lib/DBIx/Sharding.pm';
 
-# requires '';
+requires 'Carp';
+requires 'Class::Data::Inheritable';
+requires 'DBI';
+requires 'UNIVERSAL::require';
+requires 'YAML';
+
+build_requires 'Test::More';
+
+author_requires 'FindBin';
+author_requires 'Module::Install';
+author_requires 'Module::Install::AutoManifest';
+author_requires 'Module::Install::AuthorRequires';
+author_requires 'Module::Install::Repository';
+
+auto_set_repository;
 
 tests 't/*.t';
 author_tests 'xt';
 
-build_requires 'Test::More';
 use_test_base;
 auto_include;
+auto_manifest;
 WriteAll;

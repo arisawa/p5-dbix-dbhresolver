@@ -3,7 +3,6 @@ use Test::More tests => 1;
 
 use FindBin;
 use DBIx::Sharding;
-use Data::Dumper;
 
 DBIx::Sharding->load("$FindBin::Bin/db.conf.yaml");
 

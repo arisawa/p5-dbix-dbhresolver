@@ -2,7 +2,6 @@ use strict;
 use Test::More tests => 3;
 
 use DBIx::Sharding;
-use Data::Dumper;
 
 DBIx::Sharding->config(+{
     connect_info => +{

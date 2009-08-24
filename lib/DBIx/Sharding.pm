@@ -2,17 +2,18 @@ package DBIx::Sharding;
 
 use strict;
 use warnings;
-use Carp;
-use UNIVERSAL::require;
-
-our $VERSION = '0.01_01';
 
 use base qw(Class::Data::Inheritable);
 
 __PACKAGE__->mk_classdata('config');
+__PACKAGE__->config(+{});
 
+use Carp;
 use DBI;
+use UNIVERSAL::require;
 use YAML;
+
+our $VERSION = '0.01_01';
 
 sub load {
     my ( $class, $file ) = @_;
@@ -62,9 +63,11 @@ sub connect_info {
 
 __END__
 
+=for stopwords yaml
+
 =head1 NAME
 
-DBIx::Sharding - Pluggable library handles many databases aka Database Sharding.
+DBIx::Sharding - Pluggable library handles many databases a.k.a Database Sharding.
 
 =head1 SYNOPSIS
 
@@ -125,20 +128,20 @@ DBIx::Sharding - Pluggable library handles many databases aka Database Sharding.
 
 DBIx::Sharding is pluggable library handles many databases as known as Database Sharding Approach.
 
-It can retrieve L<DBI>'s database handle object or connection infomations (dsn, user, credential...) by labeled name using connect(), connect_cached(), connect_info() method,
+It can retrieve L<DBI>'s database handle object or connection informations (data source, user, credential...) by labeled name using connect(), connect_cached(), connect_info() method,
 and treat same cluster consists many nodes as one labeled name, choose fetching strategy.
 
-Sharding strategy is pluggable, so you can make custom storategy easily.
+Sharding strategy is pluggable, so you can make custom strategy easily.
 
 =head1 METHODS
 
 =head2 load($yaml_file_path)
 
-Load config file formatterd yaml.
+Load config file formatted yaml.
 
 =head2 config(\%config)
 
-Load config. (See SYNOPSYS)
+Load config. (See SYNOPSIS)
 
 =head2 connect($label, \%args)
 
