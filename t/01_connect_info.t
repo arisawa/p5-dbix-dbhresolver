@@ -11,30 +11,30 @@ DBIx::Sharding->config(+{
             user => 'root',
             password => "",
         },
-        DIARY1_W => +{
-            dsn => 'dbi:mysql:dbname=game_diary;host=db_dia1_m.mbga.dena.ne.jp',
+        MASTER1 => +{
+            dsn => 'dbi:mysql:dbname=test;host=master1',
             user => 'root',
             password => "",
         },
-        DIARY2_W => +{
-            dsn => 'dbi:mysql:dbname=game_diary;host=db_dia2_m.mbga.dena.ne.jp',
+        MASTER2 => +{
+            dsn => 'dbi:mysql:dbname=test;host=master2',
             user => 'root',
             password => "",
         },
-        DIARY1_R => +{
-            dsn => 'dbi:mysql:dbname=game_diary;host=db_dia1_s.mbga.dena.ne.jp',
+        SLAVE1 => +{
+            dsn => 'dbi:mysql:dbname=test;host=slave1',
             user => 'root',
             password => "",
         },
-        DIARY2_R => +{
-            dsn => 'dbi:mysql:dbname=game_diary;host=db_dia2_s.mbga.dena.ne.jp',
+        SLAVE2 => +{
+            dsn => 'dbi:mysql:dbname=test;host=slave2',
             user => 'root',
             password => "",
         },
     },
     sharding => +{
-        DIARY_W => [ qw(DIARY1_W DIARY2_W) ],
-        DIARY_R => [ qw(DIARY1_R DIARY2_R) ],
+        MASTER => [ qw(MASTER1 MASTER2) ],
+        SLAVE  => [ qw( SLAVE1  SLAVE2) ],
     },
 });
 
@@ -53,12 +53,12 @@ DBIx::Sharding->config(+{
 
 {
     my $info = DBIx::Sharding->connect_info(
-        'DIARY_W',
+        'MASTER',
         +{ strategy => 'Simple', key => 6 },
     );
     is_deeply(
         {
-            dsn => 'dbi:mysql:dbname=game_diary;host=db_dia1_m.mbga.dena.ne.jp',
+            dsn => 'dbi:mysql:dbname=test;host=master1',
             user => 'root',
             password => "",
         },
@@ -69,12 +69,12 @@ DBIx::Sharding->config(+{
 
 {
     my $info = DBIx::Sharding->connect_info(
-        'DIARY_R',
+        'SLAVE',
         +{ strategy => 'Simple', key => 7 },
     );
     is_deeply(
         {
-            dsn => 'dbi:mysql:dbname=game_diary;host=db_dia2_s.mbga.dena.ne.jp',
+            dsn => 'dbi:mysql:dbname=test;host=slave2',
             user => 'root',
             password => "",
         },
