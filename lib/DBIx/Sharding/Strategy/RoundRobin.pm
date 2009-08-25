@@ -4,10 +4,14 @@ use strict;
 use warnings;
 use Carp;
 
+our %COUNTERS = ();
+
 sub connect_info {
     my ($class, $sharding, $label, $args) = @_;
     my @nodes = $sharding->cluster($label);
-    my $node_label = $nodes[int rand scalar @nodes];
+    $COUNTERS{$label} ||= 0;
+    my $node_label = $nodes[$COUNTERS{$label} % scalar @nodes];
+    $COUNTERS{$label}++;
     return $sharding->connect_info($node_label);
 }
 
