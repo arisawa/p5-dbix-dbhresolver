@@ -133,7 +133,7 @@ DBIx::Sharding - Pluggable library handles many databases a.k.a Database Shardin
 
 DBIx::Sharding is pluggable library handles many databases as known as Database Sharding Approach.
 
-It can retrieve L<DBI>'s database handle object or connection informations (data source, user, credential...) by labeled name using connect(), connect_cached(), connect_info() method,
+It can retrieve L<DBI>'s database handle object or connection information (data source, user, credential...) by labeled name using connect(), connect_cached(), connect_info() method,
 and treat same cluster consists many nodes as one labeled name, choose fetching strategy.
 
 Sharding strategy is pluggable, so you can make custom strategy easily.

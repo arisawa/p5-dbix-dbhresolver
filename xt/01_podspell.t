@@ -8,3 +8,6 @@ __DATA__
 Kosuke Arisawa
 arisawa@gmail.com
 DBIx::Sharding
+Toru Yamaguchi
+Pluggable
+pluggable

@@ -10,12 +10,6 @@ requires 'YAML';
 
 build_requires 'Test::More';
 
-author_requires 'FindBin';
-author_requires 'Module::Install';
-author_requires 'Module::Install::AutoManifest';
-author_requires 'Module::Install::AuthorRequires';
-author_requires 'Module::Install::Repository';
-
 auto_set_repository;
 
 tests 't/*.t';
