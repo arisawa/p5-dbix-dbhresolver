@@ -1,7 +1,7 @@
 use strict;
 use Test::More;
 
-plan tests => 4;
+plan tests => 3;
 
 use DBIx::Sharding;
 
@@ -81,30 +81,5 @@ DBIx::Sharding->config(+{
         },
         $info,
         "DBIx::Sharding::Strategy::Remainder - 2",
-    );
-}
-
-{
-    my $info = DBIx::Sharding->connect_info(
-        'SLAVE',
-        +{ strategy => 'RoundRobin' }
-    );
-    my $_info;
-    if ($info->{dsn} =~ /1$/) {
-        $_info = {
-            dsn => 'dbi:mysql:dbname=test;host=slave1',
-            user => 'root',
-            password => "",
-        };
-    } elsif ($info->{dsn} =~ /2$/) {
-        $_info = {
-            dsn => 'dbi:mysql:dbname=test;host=slave2',
-            user => 'root',
-            password => "",
-        };
-    }
-    is_deeply(
-        $_info, $info,
-        "DBIx::Sharding::Strategy::RoundRobin - 2",
     );
 }
