@@ -1,7 +1,7 @@
 use strict;
 use Test::More;
 
-plan tests => 3;
+plan tests => 4;
 
 use DBIx::Sharding;
 
@@ -55,7 +55,7 @@ DBIx::Sharding->config(+{
 {
     my $info = DBIx::Sharding->connect_info(
         'MASTER',
-        +{ strategy => 'Simple', key => 6 },
+        +{ strategy => 'Remainder', key => 6 },
     );
     is_deeply(
         {
@@ -64,14 +64,14 @@ DBIx::Sharding->config(+{
             password => "",
         },
         $info,
-        "DBIx::Sharding::Simple - 1",
+        "DBIx::Sharding::Strategy::Remainder - 1",
     );
 }
 
 {
     my $info = DBIx::Sharding->connect_info(
         'SLAVE',
-        +{ strategy => 'Simple', key => 7 },
+        +{ strategy => 'Remainder', key => 7 },
     );
     is_deeply(
         {
@@ -80,6 +80,31 @@ DBIx::Sharding->config(+{
             password => "",
         },
         $info,
-        "DBIx::Sharding::Simple - 2",
+        "DBIx::Sharding::Strategy::Remainder - 2",
+    );
+}
+
+{
+    my $info = DBIx::Sharding->connect_info(
+        'SLAVE',
+        +{ strategy => 'RoundRobin' }
+    );
+    my $_info;
+    if ($info->{dsn} =~ /1$/) {
+        $_info = {
+            dsn => 'dbi:mysql:dbname=test;host=slave1',
+            user => 'root',
+            password => "",
+        };
+    } elsif ($info->{dsn} =~ /2$/) {
+        $_info = {
+            dsn => 'dbi:mysql:dbname=test;host=slave2',
+            user => 'root',
+            password => "",
+        };
+    }
+    is_deeply(
+        $_info, $info,
+        "DBIx::Sharding::Strategy::RoundRobin - 2",
     );
 }

@@ -6,6 +6,7 @@ use Carp;
 
 sub connect_info {
     my ($class, $sharding, $label, $args) = @_;
+    croak "arguments require 'key'" unless $args->{key};
     my @nodes = $sharding->cluster($label);
     my $node_label = $nodes[$args->{key} % scalar @nodes];
     return $sharding->connect_info($node_label);

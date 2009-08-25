@@ -40,9 +40,7 @@ sub connect_info {
     my ( $class, $label, $args ) = @_;
 
     if ( ref $args eq 'HASH' ) {
-        unless ( $args->{key} && $args->{strategy} ) {
-            croak "arguments require 'key', 'strategy'";
-        }
+        croak "arguments require 'strategy'" unless $args->{strategy};
         my $strategy_class =
             $args->{strategy} =~ /^\+(.+)$/
           ? $1
@@ -129,7 +127,7 @@ DBIx::Sharding - Pluggable library handles many databases a.k.a Database Shardin
   my $heavy2_dbh         = DBIx::Sharding->connect_cached('HEAVY_MASTER', +{ strategy => 'Simple', key => $odd_num });
 
   ### Using DBIx::Sharding::Strategy::RoundRobin
-  my $slave_dbh        = DBIx::Sharding->connect('SLAVE', +{ strategy => 'RoundRobin' });
+  my $slave_dbh          = DBIx::Sharding->connect('SLAVE', +{ strategy => 'RoundRobin' });
 
 =head1 DESCRIPTION
 
