@@ -100,7 +100,7 @@ DBIx::Sharding - Pluggable library handles many databases a.k.a Database Shardin
         attrs => +{ RaiseError => 1, AutoCommit => 0, }
       },
       HEAVY_MASTER1 => +{
-        dsn => 'dbi:mysql:dbname=heavy;host=haevy_master1',
+        dsn => 'dbi:mysql:dbname=heavy;host=heavy_master1',
         user => 'root',
         password => '',
         attrs => +{ RaiseError => 1, AutoCommit => 0, }

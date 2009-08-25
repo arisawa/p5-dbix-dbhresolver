@@ -1,4 +1,4 @@
-package DBIx::Sharding::Strategy::Simple;
+package DBIx::Sharding::Strategy::Remainder;
 
 use strict;
 use warnings;
@@ -28,11 +28,11 @@ DBIx::Sharding::Strategy::Simple - Key based sharding strategy.
   DBIx::Sharding->load('/path/to/config.yaml');
 
   my $odd_number = 7;
-  my $conn_info  = DBIx::Sharding->connect_info('MASTER', +{ strategy => 'Simple', key => $odd_number });
+  my $conn_info  = DBIx::Sharding->connect_info('MASTER', +{ strategy => 'Remainder', key => $odd_number });
 
 =head1 DESCRIPTION
 
-DBIx::Sharding::Strategy::Simple is key based sharding strategy depends on surplus divided key by nodes count.
+DBIx::Sharding::Strategy::Simple is key based sharding strategy depends on remainder divided key by number of nodes.
 
 =head1 AUTHOR
 
