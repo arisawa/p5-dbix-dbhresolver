@@ -20,7 +20,7 @@ __END__
 
 =head1 NAME
 
-DBIx::Sharding::Strategy::Simple - Key based sharding strategy.
+DBIx::Sharding::Strategy::Remainder - Key based sharding strategy.
 
 =head1 SYNOPSIS
 
@@ -33,7 +33,7 @@ DBIx::Sharding::Strategy::Simple - Key based sharding strategy.
 
 =head1 DESCRIPTION
 
-DBIx::Sharding::Strategy::Simple is key based sharding strategy depends on remainder divided key by number of nodes.
+DBIx::Sharding::Strategy::Remainder is key based sharding strategy depends on remainder divided key by number of nodes.
 
 =head1 AUTHOR
 

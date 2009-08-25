@@ -12,7 +12,7 @@ use DBI;
 use UNIVERSAL::require;
 use YAML;
 
-our $VERSION = '0.01_01';
+our $VERSION = '0.02';
 
 sub load {
     my ( $class, $file ) = @_;
