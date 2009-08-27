@@ -7,7 +7,7 @@ all_pod_files_spelling_ok('lib');
 __DATA__
 Kosuke Arisawa
 arisawa@gmail.com
-DBIx::Sharding
+DBIx::DBHResolver
 Toru Yamaguchi
 Pluggable
 pluggable

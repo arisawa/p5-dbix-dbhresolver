@@ -1,4 +1,4 @@
-package DBIx::Sharding;
+package DBIx::DBHResolver;
 
 use strict;
 use warnings;
@@ -71,13 +71,13 @@ __END__
 
 =head1 NAME
 
-DBIx::Sharding - Pluggable library handles many databases a.k.a Database Sharding.
+DBIx::DBHResolver - Pluggable library handles many databases a.k.a Database DBHResolver.
 
 =head1 SYNOPSIS
 
-  use DBIx::Sharding;
+  use DBIx::DBHResolver;
 
-  DBIx::Sharding->config(+{
+  DBIx::DBHResolver->config(+{
     connect_info => +{
       MASTER => +{
         dsn => 'dbi:mysql:dbname=main;host=master',
@@ -116,27 +116,27 @@ DBIx::Sharding - Pluggable library handles many databases a.k.a Database Shardin
     },
   });
 
-  my $master_conn_info = DBIx::Sharding->connect_info('MASTER');
-  my $master_dbh       = DBIx::Sharding->connect('MASTER');
+  my $master_conn_info = DBIx::DBHResolver->connect_info('MASTER');
+  my $master_dbh       = DBIx::DBHResolver->connect('MASTER');
 
   my ($even_num, $odd_num) = (100, 101);
 
-  ### Using DBIx::Sharding::Strategy::Simple
-  my $heavy_cluster_list = DBIx::Sharding->cluster('HEAVY_MASTER');
-  my $heavy1_conn_info   = DBIx::Sharding->connect_info('HEAVY_MASTER', +{ strategy => 'Simple', key => $even_num });
-  my $heavy2_dbh         = DBIx::Sharding->connect_cached('HEAVY_MASTER', +{ strategy => 'Simple', key => $odd_num });
+  ### Using DBIx::DBHResolver::Strategy::Simple
+  my $heavy_cluster_list = DBIx::DBHResolver->cluster('HEAVY_MASTER');
+  my $heavy1_conn_info   = DBIx::DBHResolver->connect_info('HEAVY_MASTER', +{ strategy => 'Simple', key => $even_num });
+  my $heavy2_dbh         = DBIx::DBHResolver->connect_cached('HEAVY_MASTER', +{ strategy => 'Simple', key => $odd_num });
 
-  ### Using DBIx::Sharding::Strategy::RoundRobin
-  my $slave_dbh          = DBIx::Sharding->connect('SLAVE', +{ strategy => 'RoundRobin' });
+  ### Using DBIx::DBHResolver::Strategy::RoundRobin
+  my $slave_dbh          = DBIx::DBHResolver->connect('SLAVE', +{ strategy => 'RoundRobin' });
 
 =head1 DESCRIPTION
 
-DBIx::Sharding is pluggable library handles many databases as known as Database Sharding Approach.
+DBIx::DBHResolver is pluggable library handles many databases as known as Database DBHResolver Approach.
 
 It can retrieve L<DBI>'s database handle object or connection information (data source, user, credential...) by labeled name using connect(), connect_cached(), connect_info() method,
 and treat same cluster consists many nodes as one labeled name, choose fetching strategy.
 
-Sharding strategy is pluggable, so you can make custom strategy easily.
+DBHResolver strategy is pluggable, so you can make custom strategy easily.
 
 =head1 METHODS
 
@@ -156,8 +156,8 @@ Retrieve database handle. see below about \%args details.
 
 =item strategy
 
-Specify strategy module name suffix. Default strategy module is prefixed 'DBIx::Sharding::Strategy::'.
-If you want to make custom strategy not prefixed 'DBIx::Sharding::Strategy::', add '+' prefixed module name such as '+MyApp::Strategy::Custom'.
+Specify strategy module name suffix. Default strategy module is prefixed 'DBIx::DBHResolver::Strategy::'.
+If you want to make custom strategy not prefixed 'DBIx::DBHResolver::Strategy::', add '+' prefixed module name such as '+MyApp::Strategy::Custom'.
 
 =item key
 

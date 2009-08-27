@@ -3,9 +3,9 @@ use Test::More;
 
 plan tests => 3;
 
-use DBIx::Sharding;
+use DBIx::DBHResolver;
 
-DBIx::Sharding->config(+{
+DBIx::DBHResolver->config(+{
     connect_info => +{
         LOCAL => +{
             dsn => 'dbi:mysql:dbname=test;host=localhost',
@@ -40,7 +40,7 @@ DBIx::Sharding->config(+{
 });
 
 {
-    my $info = DBIx::Sharding->connect_info('LOCAL');
+    my $info = DBIx::DBHResolver->connect_info('LOCAL');
     is_deeply(
         {
             dsn => 'dbi:mysql:dbname=test;host=localhost',
@@ -53,7 +53,7 @@ DBIx::Sharding->config(+{
 }
 
 {
-    my $info = DBIx::Sharding->connect_info(
+    my $info = DBIx::DBHResolver->connect_info(
         'MASTER',
         +{ strategy => 'Remainder', key => 6 },
     );
@@ -64,12 +64,12 @@ DBIx::Sharding->config(+{
             password => "",
         },
         $info,
-        "DBIx::Sharding::Strategy::Remainder - 1",
+        "DBIx::DBHResolver::Strategy::Remainder - 1",
     );
 }
 
 {
-    my $info = DBIx::Sharding->connect_info(
+    my $info = DBIx::DBHResolver->connect_info(
         'SLAVE',
         +{ strategy => 'Remainder', key => 7 },
     );
@@ -80,6 +80,6 @@ DBIx::Sharding->config(+{
             password => "",
         },
         $info,
-        "DBIx::Sharding::Strategy::Remainder - 2",
+        "DBIx::DBHResolver::Strategy::Remainder - 2",
     );
 }

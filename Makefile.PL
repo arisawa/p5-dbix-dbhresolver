@@ -1,6 +1,6 @@
 use inc::Module::Install;
-name 'DBIx-Sharding';
-all_from 'lib/DBIx/Sharding.pm';
+name 'DBIx-DBHResolver';
+all_from 'lib/DBIx/DBHResolver.pm';
 
 requires 'Carp';
 requires 'Class::Data::Inheritable';

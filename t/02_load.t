@@ -2,11 +2,11 @@ use strict;
 use Test::More tests => 1;
 
 use FindBin;
-use DBIx::Sharding;
+use DBIx::DBHResolver;
 
-DBIx::Sharding->load("$FindBin::Bin/db.conf.yaml");
+DBIx::DBHResolver->load("$FindBin::Bin/db.conf.yaml");
 
-my $info = DBIx::Sharding->connect_info('USER_R');
+my $info = DBIx::DBHResolver->connect_info('USER_R');
 
 is_deeply(
     {
