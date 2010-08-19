@@ -11,3 +11,8 @@ DBIx::DBHResolver
 Toru Yamaguchi
 Pluggable
 pluggable
+resolver
+sharding
+YAML
+yaml
+DBI

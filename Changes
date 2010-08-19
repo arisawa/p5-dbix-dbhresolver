@@ -1,4 +1,25 @@
 Revision history for Perl extension DBIx::DBHResolver
 
+0.07    Mon Now 30 20:57:00 2009
+        - Reversioned
+
+0.06    Thu Nov 11 13:29:00 2009
+        - disconnect_all depends on DBI->installed_drivers
+        - connect_cached methods is used DBI->connect_cached again
+
+0.05    Thi Nov 11 19:36:11 2009
+        - fixed connect_cached() method is not cached dbh.
+
+0.04    Web Nov 11 14:43:50 2009
+        - dbh is not cached on using connect() method
+
+0.03    Sat Oct 31 22:11:00 2009
+        - change to own dbh cache from using DBI::connect_cached
+        - Add disconnect_all method
+
+0.02    Wed Sep 15 18:50:00 2009
+        - load cluster data and modify yaml format.
+        - pod was wrong.. correct it.
+
 0.01    Thu Aug 13 05:01:13 2009
         - original version

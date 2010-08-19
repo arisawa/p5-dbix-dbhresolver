@@ -2,13 +2,17 @@ use inc::Module::Install;
 name 'DBIx-DBHResolver';
 all_from 'lib/DBIx/DBHResolver.pm';
 
+requires 'parent';
 requires 'Carp';
-requires 'Class::Data::Inheritable';
+requires 'Class::Accessor::Fast';
 requires 'DBI';
+requires 'Try::Tiny';
 requires 'UNIVERSAL::require';
 requires 'YAML';
 
-build_requires 'Test::More';
+test_requires 'Test::More';
+test_requires 'Test::Exception';
+test_requires 'Test::LoadAllModules';
 
 auto_set_repository;
 

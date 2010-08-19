@@ -2,186 +2,268 @@ package DBIx::DBHResolver;
 
 use strict;
 use warnings;
-use base qw(Class::Data::Inheritable);
-
-__PACKAGE__->mk_classdata('config');
-__PACKAGE__->config( +{} );
-
+use parent qw(Class::Accessor::Fast);
 use Carp;
 use DBI;
+use Try::Tiny;
 use UNIVERSAL::require;
-use YAML;
 
-our $VERSION = '0.03';
+use DBIx::DBHResolver::Strategy::Remainder;
+
+our $VERSION                   = '0.10';
+our $CONFIG                    = +{};
+our $DBI                       = 'DBI';
+our $DBI_CONNECT_METHOD        = 'connect';
+our $DBI_CONNECT_CACHED_METHOD = 'connect_cached';
+
+__PACKAGE__->mk_accessors(qw/_config/);
+
+sub new {
+    shift->SUPER::new( +{ _config => +{} } );
+}
+
+sub config {
+    my ( $proto, $config ) = @_;
+    if ( ref $proto ) {
+        return $proto->_config unless defined $config;
+        $proto->_config($config);
+    }
+    else {
+        return $CONFIG unless defined $config;
+        $CONFIG = $config;
+    }
+}
 
 sub load {
-    my ( $class, $file ) = @_;
-
-    unless ( -e $file && -r $file ) {
-        croak $!;
-    }
-
-    $class->config( +{ connect_info => YAML::LoadFile($file) } );
+    my ( $proto, $file ) = @_;
+    croak $! unless ( -e $file && -r $file );
+    try { require YAML; } catch { croak $_ };
+    $proto->config( YAML::LoadFile($file) );
 }
 
 sub connect {
-    my ( $class, $label, $args ) = @_;
-    return DBI->connect( @{ $class->connect_info( $label, $args ) }
-          {qw/dsn user password attrs/} );
+    my ( $proto, $node, $args ) = @_;
+    my $dbh = $DBI->$DBI_CONNECT_METHOD(
+        @{ $proto->connect_info( $node, $args ) }{qw/dsn user password attrs/} )
+      or croak($DBI::errstr);
+    return $dbh;
 }
 
 sub connect_cached {
-    my ( $class, $label, $args ) = @_;
-    return DBI->connect_cached( @{ $class->connect_info( $label, $args ) }
-          {qw/dsn user password attrs/} );
+    my ( $proto, $node, $args ) = @_;
+    my $dbh = $DBI->$DBI_CONNECT_CACHED_METHOD(
+        @{ $proto->connect_info( $node, $args ) }{qw/dsn user password attrs/} )
+      or croak($DBI::errstr);
+    return $dbh;
+}
+
+sub disconnect_all {
+    my ($proto) = @_;
+
+    my %drivers = DBI->installed_drivers;
+    for my $drh ( values %drivers ) {
+        for my $dbh ( @{ $drh->{ChildHandles} } ) {
+            eval { $dbh->disconnect; };
+        }
+    }
 }
 
 sub connect_info {
-    my ( $class, $label, $args ) = @_;
+    my ( $proto, $node, $args ) = @_;
 
     if ( ref $args eq 'HASH' ) {
-        croak "arguments require 'strategy'" unless $args->{strategy};
+        croak q|args has not 'strategy' field| unless $args->{strategy};
         my $strategy_class =
             $args->{strategy} =~ /^\+(.+)$/
           ? $1
           : join( '::', ( __PACKAGE__, 'Strategy', $args->{strategy} ) );
 
-        $strategy_class->require;
-        return $strategy_class->connect_info( $class, $label, $args );
+        try {
+            $strategy_class->require;
+        }
+        catch {
+            croak $_;
+        };
+
+        return $strategy_class->connect_info( $proto, $node, $args );
+    }
+    elsif ( defined $args ) {
+        $args = +{
+            strategy => 'Remainder',
+            key      => $args,
+        };
+
+        return DBIx::DBHResolver::Strategy::Remainder->connect_info( $proto,
+            $node, $args );
     }
     else {
-        croak 'not found connect_info'
-          unless ( exists $class->config->{connect_info}->{$label} );
-        return $class->config->{connect_info}->{$label};
+        croak sprintf( 'not found connect_info: %s', $node )
+          unless ( exists $proto->config->{connect_info}{$node} );
+        return $proto->config->{connect_info}{$node};
     }
 }
 
 sub cluster {
-    my ( $class, $cluster_name ) = @_;
+    my ( $proto, $cluster_name ) = @_;
     wantarray
-      ? @{ $class->config->{clusters}->{$cluster_name} }
-      : $class->config->{clusters}->{$cluster_name};
+      ? @{ $proto->config->{clusters}{$cluster_name} }
+      : $proto->config->{clusters}{$cluster_name};
 }
 
 1;
 
-__END__
-
-=for stopwords yaml
-
 =head1 NAME
 
-DBIx::DBHResolver - Pluggable library handles many databases a.k.a Database DBHResolver.
+DBIx::DBHResolver - Resolve database connection on the environment has many database servers.
 
 =head1 SYNOPSIS
 
   use DBIx::DBHResolver;
 
-  DBIx::DBHResolver->config(+{
+  my $r = DBIx::DBHResolver->new;
+  $r->config(+{
     connect_info => +{
-      MASTER => +{
-        dsn => 'dbi:mysql:dbname=main;host=master',
-        user => 'root',
-        password => '',
-        attrs => +{ RaiseError => 1, AutoCommit => 0, }
+      main_master => +{
+        dsn => 'dbi:mysql:dbname=main;host=localhost',
+        user => 'master_user', password => '',
+        args => +{ RaiseError => 1, AutoCommit => 0, },
       },
-      SLAVE1 => +{
-        dsn => 'dbi:mysql:dbname=main;host=slave1',
-        user => 'root',
-        password => '',
-        attrs => +{ RaiseError => 1, AutoCommit => 0, }
-      },
-      SLAVE2 => +{
-        dsn => 'dbi:mysql:dbname=main;host=slave2',
-        user => 'root',
-        password => '',
-        attrs => +{ RaiseError => 1, AutoCommit => 0, }
-      },
-      HEAVY_MASTER1 => +{
-        dsn => 'dbi:mysql:dbname=heavy;host=heavy_master1',
-        user => 'root',
-        password => '',
-        attrs => +{ RaiseError => 1, AutoCommit => 0, }
-      },
-      HEAVY_MASTER2 => +{
-        dsn => 'dbi:mysql:dbname=heavy;host=heavy_master2',
-        user => 'root',
-        password => '',
-        attrs => +{ RaiseError => 1, AutoCommit => 0, }
-      },
-    },
-    cluster => +{
-      SLAVE => [ qw/SLAVE1 SLAVE2/ ],
-      HEAVY_MASTER => [ qw/HEAVY_MASTER1 HEAVY_MASTER2/ ]
+      main_slave => +{
+        dsn => 'dbi:mysql:dbname=main;host=localhost',
+        user => 'slave_user', password => '',
+        args => +{ RaiseError => 1, AutoCommit => 1, },
+      }
     },
   });
 
-  my $master_conn_info = DBIx::DBHResolver->connect_info('MASTER');
-  my $master_dbh       = DBIx::DBHResolver->connect('MASTER');
+  my $dbh_master = $r->connect('main_master');
+  $dbh_master->do( 'UPDATE people SET ...', undef, ... );
 
-  my ($even_num, $odd_num) = (100, 101);
-
-  ### Using DBIx::DBHResolver::Strategy::Simple
-  my $heavy_cluster_list = DBIx::DBHResolver->cluster('HEAVY_MASTER');
-  my $heavy1_conn_info   = DBIx::DBHResolver->connect_info('HEAVY_MASTER', +{ strategy => 'Simple', key => $even_num });
-  my $heavy2_dbh         = DBIx::DBHResolver->connect_cached('HEAVY_MASTER', +{ strategy => 'Simple', key => $odd_num });
-
-  ### Using DBIx::DBHResolver::Strategy::RoundRobin
-  my $slave_dbh          = DBIx::DBHResolver->connect('SLAVE', +{ strategy => 'RoundRobin' });
+  my $dbh_slave = $r->connect('main_slave');
+  my $people = $dbh_slave->selectrow_hashref( 'SELECT * FROM people WHERE id = ?', undef, 20 );
 
 =head1 DESCRIPTION
 
-DBIx::DBHResolver is pluggable library handles many databases as known as Database DBHResolver Approach.
+DBIx::DBHResolver resolves database connection on the environment has many database servers.
+The resolution algorithm is extensible and pluggable, because of this you can make custom strategy module easily.
 
-It can retrieve L<DBI>'s database handle object or connection information (data source, user, credential...) by labeled name using connect(), connect_cached(), connect_info() method,
+This module can retrieve L<DBI>'s database handle object or connection information (data source, user, credential...) by labeled name
 and treat same cluster consists many nodes as one labeled name, choose fetching strategy.
 
-DBHResolver strategy is pluggable, so you can make custom strategy easily.
+DBIx::DBHResolver is able to use as instance or static class.
+
+=head2 USING STRATEGY, MAKING CUSTOM STRATEGY
+
+See L<DBIx::DBHResolver::Strategy::Remainder>.
 
 =head1 METHODS
 
-=head2 load($yaml_file_path)
+=head2 new()
 
-Load config file formatted yaml.
+Create DBIx::DBHResolver instance.
 
-=head2 config(\%config)
+=head2 load( $yaml_file_path )
 
-Load config. (See SYNOPSIS)
+Load config file formatted yaml. 
 
-=head2 connect($label, \%args)
+=head2 config( \%config )
 
-Retrieve database handle. see below about \%args details.
+Load config. Example config (perl hash reference format):
+
+  +{
+    clusters => +{
+      diary_master => [qw/diary001_master diary002_master/],
+      people_master => [qw/people001_master people002_master people003_master people004_master/]
+    },
+    connect_info => +{
+      diary001_master => +{
+        dsn => 'dbi:driverName:...',
+        user => 'root', password => '', args => +{},
+      },
+      diary002_master => +{ ... },
+      ...
+    },
+  }
+
+=head2 connect( $node, \%args )
+
+Retrieve database handle. See below about \%args details.
 
 =over
 
 =item strategy
 
-Specify strategy module name suffix. Default strategy module is prefixed 'DBIx::DBHResolver::Strategy::'.
-If you want to make custom strategy not prefixed 'DBIx::DBHResolver::Strategy::', add '+' prefixed module name such as '+MyApp::Strategy::Custom'.
+Optional parameter. Specify suffix of strategy module name. Default strategy module is prefixed 'DBIx::DBHResolver::Strategy::'.
+If you want to make custom strategy that is not started of 'DBIx::DBHResolver::Strategy::', then add prefix '+' at the beginning of the module name, such as '+MyApp::Strategy::Custom'.
 
 =item key
 
-Strategy module uses hint choosing node.
+Optional parameter. Strategy module uses hint choosing node.
 
 =back
 
-=head2 connect_cached($label, \%args)
+=head2 connect_cached($node, \%args)
 
-Retrieve database handle using DBI::connect_cached(). \%args is same as connect().
+Retrieve database handle from own cache, if not exists cache then using DBI::connect(). \%args is same as connect().
 
-=head2 connect_info($label, \%args)
+=head2 connect_info($node, \%args)
 
 Retrieve connection info as HASHREF. \%args is same as connect().
+
+=head2 disconnect_all()
+
+Disconnect all cached database handles.
 
 =head2 cluster($cluster_name)
 
 Retrieve cluster member node names as Array.
 
+=head1 GLOBAL VARIABLES
+
+=head2 $CONFIG
+
+Stored config on using class module.
+
+=head2 $DBI
+
+DBI module name, default 'DBI'. If you want to use custom L<DBI> sub class, then you must override this variable.
+
+=head2 $DBI_CONNECT_METHOD
+
+DBI connect method name, default 'connect';
+
+If you want to use L<DBIx::Connector> instead of L<DBI>, then:
+
+  use DBIx::Connector;
+  use DBIx::DBHResolver;
+
+  $DBIx::DBHResolver::DBI = 'DBIx::Connector';
+  $DBIx::DBHResolver::DBI_CONNECT_METHOD = 'new';
+  $DBIx::DBHResolver::DBI_CONNECT_CACHED_METHOD = 'new';
+
+  my $r = DBIx::DBHResolver->new;
+  $r->config(+{...});
+
+  $r->connect('main_master')->txn(
+    fixup => sub {
+      my $dbh = shift;
+      ...
+    }
+  );
+
+=head2 $DBI_CONNECT_CACHED_METHOD
+
+DBI connect method name, default 'connect_cached';
+
 =head1 AUTHOR
 
-Kosuke Arisawa E<lt>arisawa@gmail.comE<gt>
+=over
 
-Toru Yamaguchi E<lt>zigorou@cpan.orgE<gt>
+=item Kosuke Arisawa E<lt>arisawa@gmail.comE<gt>
+
+=item Toru Yamaguchi E<lt>zigorou@cpan.orgE<gt>
+
+=back
 
 =head1 SEE ALSO
 
