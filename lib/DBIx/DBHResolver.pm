@@ -42,17 +42,17 @@ sub load {
 }
 
 sub connect {
-    my ( $proto, $node, $args ) = @_;
+    my ( $proto, $cluster_or_node, $args ) = @_;
     my $dbh = $DBI->$DBI_CONNECT_METHOD(
-        @{ $proto->connect_info( $node, $args ) }{qw/dsn user password attrs/} )
+        @{ $proto->connect_info( $cluster_or_node, $args ) }{qw/dsn user password attrs/} )
       or croak($DBI::errstr);
     return $dbh;
 }
 
 sub connect_cached {
-    my ( $proto, $node, $args ) = @_;
+    my ( $proto, $cluster_or_node, $args ) = @_;
     my $dbh = $DBI->$DBI_CONNECT_CACHED_METHOD(
-        @{ $proto->connect_info( $node, $args ) }{qw/dsn user password attrs/} )
+        @{ $proto->connect_info( $cluster_or_node, $args ) }{qw/dsn user password attrs/} )
       or croak($DBI::errstr);
     return $dbh;
 }
@@ -69,7 +69,7 @@ sub disconnect_all {
 }
 
 sub connect_info {
-    my ( $proto, $node, $args ) = @_;
+    my ( $proto, $cluster_or_node, $args ) = @_;
 
     if ( ref $args eq 'HASH' ) {
         croak q|args has not 'strategy' field| unless $args->{strategy};
@@ -85,29 +85,39 @@ sub connect_info {
             croak $_;
         };
 
-        return $strategy_class->connect_info( $proto, $node, $args );
+        return $strategy_class->connect_info( $proto, $cluster_or_node, $args );
     }
-    elsif ( defined $args ) {
+    elsif ( defined $args && !ref $args ) {
         $args = +{
             strategy => 'Remainder',
             key      => $args,
         };
 
         return DBIx::DBHResolver::Strategy::Remainder->connect_info( $proto,
-            $node, $args );
+            $cluster_or_node, $args );
     }
     else {
-        croak sprintf( 'not found connect_info: %s', $node )
-          unless ( exists $proto->config->{connect_info}{$node} );
-        return $proto->config->{connect_info}{$node};
+        croak sprintf( 'not found connect_info: %s', $cluster_or_node )
+          unless ( exists $proto->config->{connect_info}{$cluster_or_node} );
+        return $proto->config->{connect_info}{$cluster_or_node};
     }
 }
 
 sub cluster {
-    my ( $proto, $cluster_name ) = @_;
+    my ( $proto, $cluster ) = @_;
     wantarray
-      ? @{ $proto->config->{clusters}{$cluster_name} }
-      : $proto->config->{clusters}{$cluster_name};
+      ? @{ $proto->config->{clusters}{$cluster} }
+      : $proto->config->{clusters}{$cluster};
+}
+
+sub is_cluster {
+    my ( $proto, $cluster ) = @_;
+    exists $proto->config->{clusters}{$cluster} ? 1 : 0;
+}
+
+sub is_node {
+    my ( $proto, $node ) = @_;
+    exists $proto->config->{connect_info}{$node} ? 1 : 0;
 }
 
 1;
@@ -126,12 +136,12 @@ DBIx::DBHResolver - Resolve database connection on the environment has many data
       main_master => +{
         dsn => 'dbi:mysql:dbname=main;host=localhost',
         user => 'master_user', password => '',
-        args => +{ RaiseError => 1, AutoCommit => 0, },
+        attrs => +{ RaiseError => 1, AutoCommit => 0, },
       },
       main_slave => +{
         dsn => 'dbi:mysql:dbname=main;host=localhost',
         user => 'slave_user', password => '',
-        args => +{ RaiseError => 1, AutoCommit => 1, },
+        attrs => +{ RaiseError => 1, AutoCommit => 1, },
       }
     },
   });
@@ -178,14 +188,14 @@ Load config. Example config (perl hash reference format):
     connect_info => +{
       diary001_master => +{
         dsn => 'dbi:driverName:...',
-        user => 'root', password => '', args => +{},
+        user => 'root', password => '', attrs => +{},
       },
       diary002_master => +{ ... },
       ...
     },
   }
 
-=head2 connect( $node, \%args )
+=head2 connect( $cluster_or_node, \%args )
 
 Retrieve database handle. See below about \%args details.
 
@@ -202,11 +212,11 @@ Optional parameter. Strategy module uses hint choosing node.
 
 =back
 
-=head2 connect_cached($node, \%args)
+=head2 connect_cached($cluster_or_node, \%args)
 
 Retrieve database handle from own cache, if not exists cache then using DBI::connect(). \%args is same as connect().
 
-=head2 connect_info($node, \%args)
+=head2 connect_info($cluster_or_node, \%args)
 
 Retrieve connection info as HASHREF. \%args is same as connect().
 
@@ -214,9 +224,29 @@ Retrieve connection info as HASHREF. \%args is same as connect().
 
 Disconnect all cached database handles.
 
-=head2 cluster($cluster_name)
+=head2 cluster($cluster)
 
 Retrieve cluster member node names as Array.
+
+  my $r = DBIx::DBHResolver->new;
+  $r->config(+{ ... });
+  my $cluster_or_node = 'activities_master';
+  if ( $r->is_cluster($cluster_or_node) ) {
+    for ($r->cluster( $cluster_or_node )) {
+      process_activities_node($_);
+    }
+  }
+  else {
+    process_activities_node($cluster_or_node);
+  }
+
+=head2 is_cluster($cluster)
+
+Return boolean value which cluster or not given name.
+
+=head2 is_node($node)
+
+Return boolean value which node or not given name.
 
 =head1 GLOBAL VARIABLES
 

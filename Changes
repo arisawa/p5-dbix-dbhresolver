@@ -1,5 +1,13 @@
 Revision history for Perl extension DBIx::DBHResolver
 
+0.10    Thu Aug 19 20:07:22 2010
+        - Supports to use as object
+        - Supports custom DBI subclass or similar interface module 
+          and method on connect() and connect_cached() method
+        - Supports scalar args on connect_info for Remainer strategy alias.
+        - Add is_cluster and is_node method
+        - Add dependencies (Try::Tiny, Class::Accessor::Fast)
+
 0.07    Mon Now 30 20:57:00 2009
         - Reversioned
 
