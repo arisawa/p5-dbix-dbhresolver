@@ -22,5 +22,5 @@ author_tests 'xt';
 
 use_test_base;
 auto_include;
-auto_manifest;
+# auto_manifest;
 WriteAll;
