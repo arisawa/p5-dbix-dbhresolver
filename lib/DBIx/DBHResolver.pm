@@ -10,7 +10,7 @@ use UNIVERSAL::require;
 
 use DBIx::DBHResolver::Strategy::Remainder;
 
-our $VERSION                   = '0.10';
+our $VERSION                   = '0.11';
 our $CONFIG                    = +{};
 our $DBI                       = 'DBI';
 our $DBI_CONNECT_METHOD        = 'connect';

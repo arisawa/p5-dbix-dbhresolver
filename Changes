@@ -1,5 +1,9 @@
 Revision history for Perl extension DBIx::DBHResolver
 
+0.11    Mon Aug 23 01:41:51 2010
+        - add test_requires (Test::Exception)
+        - no module changes
+
 0.10    Thu Aug 19 20:07:22 2010
         - Supports to use as object
         - Supports custom DBI subclass or similar interface module 

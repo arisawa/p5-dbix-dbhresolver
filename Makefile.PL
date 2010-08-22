@@ -11,6 +11,7 @@ requires 'UNIVERSAL::require';
 requires 'YAML';
 
 test_requires 'Test::More';
+test_requires 'Test::Exception';
 test_requires 'Test::LoadAllModules';
 test_requires 'Test::Requires';
 
