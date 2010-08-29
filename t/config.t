@@ -54,6 +54,9 @@ subtest 'using as static class' => sub {
 
 subtest 'using as object' => sub {
     my $r = DBIx::DBHResolver->new;
+
+    note explain $r->config;
+
     is_deeply( $r->config, +{}, 'empty config before calling load method' );
     $r->load($CONFIG_FILE);
     is_deeply( $r->config, $CONFIG, 'loaded config' );

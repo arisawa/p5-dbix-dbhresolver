@@ -4,13 +4,14 @@ use strict;
 use warnings;
 use parent qw(Class::Accessor::Fast);
 use Carp;
+use Data::Util qw(is_value is_array_ref is_hash_ref is_instance is_invocant);
 use DBI;
 use Try::Tiny;
 use UNIVERSAL::require;
 
-use DBIx::DBHResolver::Strategy::Remainder;
+use DBIx::DBHResolver::Strategy::Key;
 
-our $VERSION                   = '0.11';
+our $VERSION                   = '0.11_01';
 our $CONFIG                    = +{};
 our $DBI                       = 'DBI';
 our $DBI_CONNECT_METHOD        = 'connect';
@@ -24,7 +25,8 @@ sub new {
 
 sub config {
     my ( $proto, $config ) = @_;
-    if ( ref $proto ) {
+
+    if ( is_instance( $proto, 'DBIx::DBHResolver' ) ) {
         return $proto->_config unless defined $config;
         $proto->_config($config);
     }
@@ -44,7 +46,8 @@ sub load {
 sub connect {
     my ( $proto, $cluster_or_node, $args ) = @_;
     my $dbh = $DBI->$DBI_CONNECT_METHOD(
-        @{ $proto->connect_info( $cluster_or_node, $args ) }{qw/dsn user password attrs/} )
+        @{ $proto->connect_info( $cluster_or_node, $args ) }
+          {qw/dsn user password attrs/} )
       or croak($DBI::errstr);
     return $dbh;
 }
@@ -52,7 +55,8 @@ sub connect {
 sub connect_cached {
     my ( $proto, $cluster_or_node, $args ) = @_;
     my $dbh = $DBI->$DBI_CONNECT_CACHED_METHOD(
-        @{ $proto->connect_info( $cluster_or_node, $args ) }{qw/dsn user password attrs/} )
+        @{ $proto->connect_info( $cluster_or_node, $args ) }
+          {qw/dsn user password attrs/} )
       or croak($DBI::errstr);
     return $dbh;
 }
@@ -71,44 +75,68 @@ sub disconnect_all {
 sub connect_info {
     my ( $proto, $cluster_or_node, $args ) = @_;
 
-    if ( ref $args eq 'HASH' ) {
-        croak q|args has not 'strategy' field| unless $args->{strategy};
-        my $strategy_class =
-            $args->{strategy} =~ /^\+(.+)$/
-          ? $1
-          : join( '::', ( __PACKAGE__, 'Strategy', $args->{strategy} ) );
-
-        try {
-            $strategy_class->require;
-        }
-        catch {
-            croak $_;
-        };
-
-        return $strategy_class->connect_info( $proto, $cluster_or_node, $args );
-    }
-    elsif ( defined $args && !ref $args ) {
-        $args = +{
-            strategy => 'Remainder',
-            key      => $args,
-        };
-
-        return DBIx::DBHResolver::Strategy::Remainder->connect_info( $proto,
-            $cluster_or_node, $args );
-    }
-    else {
+    if ( $proto->is_node($cluster_or_node) ) {
         croak sprintf( 'not found connect_info: %s', $cluster_or_node )
           unless ( exists $proto->config->{connect_info}{$cluster_or_node} );
-        return $proto->config->{connect_info}{$cluster_or_node};
+        my $connect_info = $proto->config->{connect_info}{$cluster_or_node};
+        if ( ref $connect_info eq 'HASH' ) {
+            return $connect_info;
+        }
+        else {
+            return $proto->connect_info($connect_info);
+        }
+    }
+    elsif ( $proto->is_cluster($cluster_or_node) ) {
+        if ( is_hash_ref $args ) {
+            croak q|args has not 'strategy' field| unless $args->{strategy};
+            my $strategy_class =
+              $proto->_resolve_namespace( $args->{strategy} );
+            return $proto->_ensure_class_loaded($strategy_class)
+              ->connect_info( $proto, $cluster_or_node, $args );
+        }
+        else {
+            my $cluster_info = $proto->cluster_info($cluster_or_node);
+            if ( is_array_ref $cluster_info ) {
+                return DBIx::DBHResolver::Strategy::Key->connect_info(
+                    $proto,
+                    $cluster_or_node,
+                    +{
+                        strategy => 'Key',
+                        nodes    => $cluster_info,
+                        key      => $args,
+                    }
+                );
+            }
+            elsif ( is_hash_ref $cluster_info ) {
+                my $strategy_class =
+                  $proto->_resolve_namespace( $cluster_info->{strategy} );
+                return $proto->_ensure_class_loaded($strategy_class)
+                  ->connect_info( $proto, $cluster_or_node,
+                    +{ %$cluster_info, key => $args, } );
+            }
+        }
+    }
+    else {
+        croak sprintf( '%s is not defined', $cluster_or_node );
     }
 }
 
-sub cluster {
+sub cluster_info {
     my ( $proto, $cluster ) = @_;
-    wantarray
-      ? @{ $proto->config->{clusters}{$cluster} }
-      : $proto->config->{clusters}{$cluster};
+    $proto->config->{clusters}{$cluster};
 }
+
+sub clusters {
+    my ( $proto, $cluster ) = @_;
+    my $cluster_info = $proto->cluster_info($cluster);
+    my @nodes =
+      is_array_ref($cluster_info)
+      ? @$cluster_info
+      : @{ $cluster_info->{nodes} };
+    wantarray ? @nodes : \@nodes;
+}
+
+*cluster = \&clusters;
 
 sub is_cluster {
     my ( $proto, $cluster ) = @_;
@@ -118,6 +146,30 @@ sub is_cluster {
 sub is_node {
     my ( $proto, $node ) = @_;
     exists $proto->config->{connect_info}{$node} ? 1 : 0;
+}
+
+sub _ensure_class_loaded {
+    my ( $proto, $class_name ) = @_;
+    unless ( is_invocant $class_name ) {
+        try {
+            $class_name->require;
+        }
+        catch {
+            croak $_;
+        };
+    }
+    $class_name;
+}
+
+sub _resolve_namespace {
+    my ( $proto, $class_name ) = @_;
+    $class_name = 'Key'
+      if ( defined $class_name && $class_name eq 'Remainder' );
+    $class_name =
+        $class_name =~ /^\+(.+)$/
+      ? $1
+      : join( '::', ( __PACKAGE__, 'Strategy', $class_name ) );
+    $class_name;
 }
 
 1;
@@ -164,7 +216,7 @@ DBIx::DBHResolver is able to use as instance or static class.
 
 =head2 USING STRATEGY, MAKING CUSTOM STRATEGY
 
-See L<DBIx::DBHResolver::Strategy::Remainder>.
+See L<DBIx::DBHResolver::Strategy::Key>.
 
 =head1 METHODS
 

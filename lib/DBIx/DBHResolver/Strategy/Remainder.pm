@@ -8,8 +8,9 @@ our $VERSION = '0.10';
 
 sub connect_info {
     my ( $class, $resolver, $node, $args ) = @_;
-    croak q|args has not 'key' field| unless ( defined $args->{key} && $args->{key} =~ m/^\d+$/ );
-    my @nodes      = $resolver->cluster($node);
+    croak q|args has not 'key' field|
+      unless ( defined $args->{key} && $args->{key} =~ m/^\d+$/ );
+    my @nodes         = $resolver->clusters($node);
     my $resolved_node = $nodes[ $args->{key} % scalar @nodes ];
     return $resolver->connect_info($resolved_node);
 }
