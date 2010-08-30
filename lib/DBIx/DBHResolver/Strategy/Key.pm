@@ -9,9 +9,9 @@ our $VERSION = '0.01';
 
 sub connect_info {
     my ( $class, $resolver, $node, $args ) = @_;
-    my @args =
+    my @keys =
       is_array_ref( $args->{key} ) ? @{ $args->{key} } : ( $args->{key} );
-    my $key = shift @args;
+    my $key = shift @keys;
 
     unless ( is_number($key) ) {
         croak sprintf( 'args has not key field or no number value (key: %s)',
@@ -21,7 +21,7 @@ sub connect_info {
     my @nodes         = $resolver->clusters($node);
     my $resolved_node = $nodes[ $key % scalar @nodes ];
 
-    return $resolver->connect_info( $resolved_node, \@args );
+    return $resolver->connect_info( $resolved_node, \@keys );
 }
 
 1;

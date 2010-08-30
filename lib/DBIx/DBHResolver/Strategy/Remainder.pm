@@ -19,33 +19,13 @@ sub connect_info {
 
 =head1 NAME
 
-DBIx::DBHResolver::Strategy::Remainder - Key based sharding strategy.
+DBIx::DBHResolver::Strategy::Remainder - Deprecated
 
 =head1 SYNOPSIS
 
-  use DBIx::DBHResolver;
-
-  my $r = DBIx::DBHResolver->new;
-  $r->config(+{
-    clusters => +{
-      diary_master => [qw/diary001_master diary002_master diary003_master diary004_master/]
-    },
-    connect_info => +{
-      diary001_master => +{ ... },
-      diary002_master => +{ ... },
-      diary003_master => +{ ... },
-      diary004_master => +{ ... },
-    }
-  });
-
-  my $dbh_001 = $r->connect( 'diary_master', +{ key => 4, strategy => 'Remainer' } ); # key % 4 == 0
-  my $dbh_002 = $r->connect( 'diary_master', +{ key => 5, strategy => 'Remainer' } ); # key % 4 == 1
-  my $dbh_003 = $r->connect( 'diary_master', +{ key => 6, strategy => 'Remainer' } ); # key % 4 == 2
-  my $dbh_004 = $r->connect( 'diary_master', +{ key => 7, strategy => 'Remainer' } ); # key % 4 == 3
-
 =head1 DESCRIPTION
 
-DBIx::DBHResolver::Strategy::Remainder is key based sharding strategy depends on remainder divided key by number of nodes.
+DBIx::DBHResolver::Strategy::Remainder is now deprecated. Please use to L<DBIx::DBHResolver::Strategy::Key> instead of this.
 
 =head1 METHOD
 
@@ -60,6 +40,8 @@ Kosuke Arisawa E<lt>arisawa@gmail.comE<gt>
 =over
 
 =item L<DBIx::DBHResolver>
+
+=item L<DBIx::DBHResolver::Strategy::Key>
 
 =item L<DBI>
 
