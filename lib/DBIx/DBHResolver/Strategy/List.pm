@@ -3,7 +3,7 @@ package DBIx::DBHResolver::Strategy::List;
 use strict;
 use warnings;
 use Carp;
-use Data::Util qw(is_hash_ref);
+use Data::Util qw(is_hash_ref is_array_ref);
 
 our $VERSION = '0.01';
 

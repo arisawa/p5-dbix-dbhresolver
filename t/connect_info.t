@@ -82,6 +82,24 @@ our $TEST_CONFIG = +{
             strategy => 'Key',
             nodes    => [qw(SLAVE_CLUSTER1 SLAVE_CLUSTER2 SLAVE_CLUSTER3)]
         },
+        SLAVE_LIST_CLUSTER => +{
+            strategy        => 'List',
+            nodes           => [qw(SLAVE1 SLAVE3 SLAVE5)],
+            strategy_config => +{
+                SLAVE1 => [ 1, 4 ],
+                SLAVE3 => [ 2, 3, 6 ],
+                SLAVE5 => [5],
+            },
+        },
+        ALIAS_LIST_CLUSTER => +{
+            strategy => 'List',
+            nodes    => [qw(ALIAS_CLUSTER1 ALIAS_CLUSTER2 ALIAS_CLUSTER3)],
+            strategy_config => +{
+                ALIAS_CLUSTER1 => [ 1, 5 ],
+                ALIAS_CLUSTER2 => [ 2, 7 ],
+                ALIAS_CLUSTER3 => [ 3, 4, 6 ],
+            },
+        },
         ALIAS_CLUSTER1 => +{
             strategy => 'Key',
             nodes    => [qw(ALIAS1 ALIAS2)]
@@ -97,6 +115,18 @@ our $TEST_CONFIG = +{
         ALIAS_CLUSTER => +{
             strategy => 'Key',
             nodes    => [qw(ALIAS_CLUSTER1 ALIAS_CLUSTER2 ALIAS_CLUSTER3)]
+        },
+        RANGE_CLUSTER => +{
+            strategy        => 'Range',
+            nodes           => [qw(SLAVE1 SLAVE2 SLAVE3 SLAVE4 SLAVE5 SLAVE6)],
+            strategy_config => [
+                SLAVE1 => [ '<',  10 ],
+                SLAVE2 => [ '>=', 10, '<' => 20, ],
+                SLAVE3 => [ '>=', 20, '<' => 30, ],
+                SLAVE4 => [ '>=', 30, '<' => 40, ],
+                SLAVE5 => [ '>=', 40, '<' => 50, ],
+                SLAVE6 => [ '>=', 50, ],
+            ],
         },
     },
 };
@@ -366,6 +396,226 @@ sub run_all_tests {
         node_args => [ 5, 11 ],
         expects   => $TEST_CONFIG->{connect_info}{SLAVE6},
     );
+
+    test_connect_info(
+        desc      => 'List strategy (key: 1)',
+        resolver  => $resolver,
+        node      => 'SLAVE_LIST_CLUSTER',
+        node_args => 1,
+        expects   => $TEST_CONFIG->{connect_info}{SLAVE1},
+    );
+
+    test_connect_info(
+        desc      => 'List strategy (key: 2)',
+        resolver  => $resolver,
+        node      => 'SLAVE_LIST_CLUSTER',
+        node_args => 2,
+        expects   => $TEST_CONFIG->{connect_info}{SLAVE3},
+    );
+
+    test_connect_info(
+        desc      => 'List strategy (key: 3)',
+        resolver  => $resolver,
+        node      => 'SLAVE_LIST_CLUSTER',
+        node_args => 3,
+        expects   => $TEST_CONFIG->{connect_info}{SLAVE3},
+    );
+
+    test_connect_info(
+        desc      => 'List strategy (key: 4)',
+        resolver  => $resolver,
+        node      => 'SLAVE_LIST_CLUSTER',
+        node_args => 4,
+        expects   => $TEST_CONFIG->{connect_info}{SLAVE1},
+    );
+
+    test_connect_info(
+        desc      => 'List strategy (key: 5)',
+        resolver  => $resolver,
+        node      => 'SLAVE_LIST_CLUSTER',
+        node_args => 5,
+        expects   => $TEST_CONFIG->{connect_info}{SLAVE5},
+    );
+
+    test_connect_info(
+        desc      => 'List strategy (key: 6)',
+        resolver  => $resolver,
+        node      => 'SLAVE_LIST_CLUSTER',
+        node_args => 6,
+        expects   => $TEST_CONFIG->{connect_info}{SLAVE3},
+    );
+
+    test_connect_info(
+        desc      => 'List strategy (key: 1, 2)',
+        resolver  => $resolver,
+        node      => 'ALIAS_LIST_CLUSTER',
+        node_args => [ 1, 2 ],
+        expects   => $TEST_CONFIG->{connect_info}{SLAVE1},
+    );
+
+    test_connect_info(
+        desc      => 'List strategy (key: 1, 3)',
+        resolver  => $resolver,
+        node      => 'ALIAS_LIST_CLUSTER',
+        node_args => [ 1, 3 ],
+        expects   => $TEST_CONFIG->{connect_info}{SLAVE2},
+    );
+
+    test_connect_info(
+        desc      => 'List strategy (key: 2, 2)',
+        resolver  => $resolver,
+        node      => 'ALIAS_LIST_CLUSTER',
+        node_args => [ 2, 2 ],
+        expects   => $TEST_CONFIG->{connect_info}{SLAVE3},
+    );
+
+    test_connect_info(
+        desc      => 'List strategy (key: 2, 3)',
+        resolver  => $resolver,
+        node      => 'ALIAS_LIST_CLUSTER',
+        node_args => [ 2, 3 ],
+        expects   => $TEST_CONFIG->{connect_info}{SLAVE4},
+    );
+
+    test_connect_info(
+        desc      => 'List strategy (key: 3, 2)',
+        resolver  => $resolver,
+        node      => 'ALIAS_LIST_CLUSTER',
+        node_args => [ 3, 2 ],
+        expects   => $TEST_CONFIG->{connect_info}{SLAVE5},
+    );
+
+    test_connect_info(
+        desc      => 'List strategy (key: 2, 3)',
+        resolver  => $resolver,
+        node      => 'ALIAS_LIST_CLUSTER',
+        node_args => [ 3, 3 ],
+        expects   => $TEST_CONFIG->{connect_info}{SLAVE6},
+    );
+
+    test_connect_info(
+        desc      => 'List strategy (key: 4, 2)',
+        resolver  => $resolver,
+        node      => 'ALIAS_LIST_CLUSTER',
+        node_args => [ 4, 2 ],
+        expects   => $TEST_CONFIG->{connect_info}{SLAVE5},
+    );
+
+    test_connect_info(
+        desc      => 'List strategy (key: 4, 3)',
+        resolver  => $resolver,
+        node      => 'ALIAS_LIST_CLUSTER',
+        node_args => [ 4, 3 ],
+        expects   => $TEST_CONFIG->{connect_info}{SLAVE6},
+    );
+
+    test_connect_info(
+        desc      => 'List strategy (key: 5, 2)',
+        resolver  => $resolver,
+        node      => 'ALIAS_LIST_CLUSTER',
+        node_args => [ 5, 2 ],
+        expects   => $TEST_CONFIG->{connect_info}{SLAVE1},
+    );
+
+    test_connect_info(
+        desc      => 'List strategy (key: 5, 3)',
+        resolver  => $resolver,
+        node      => 'ALIAS_LIST_CLUSTER',
+        node_args => [ 5, 3 ],
+        expects   => $TEST_CONFIG->{connect_info}{SLAVE2},
+    );
+
+    test_connect_info(
+        desc      => 'List strategy (key: 6, 2)',
+        resolver  => $resolver,
+        node      => 'ALIAS_LIST_CLUSTER',
+        node_args => [ 6, 2 ],
+        expects   => $TEST_CONFIG->{connect_info}{SLAVE5},
+    );
+
+    test_connect_info(
+        desc      => 'List strategy (key: 6, 3)',
+        resolver  => $resolver,
+        node      => 'ALIAS_LIST_CLUSTER',
+        node_args => [ 6, 3 ],
+        expects   => $TEST_CONFIG->{connect_info}{SLAVE6},
+    );
+
+    test_connect_info(
+        desc      => 'List strategy (key: 7, 2)',
+        resolver  => $resolver,
+        node      => 'ALIAS_LIST_CLUSTER',
+        node_args => [ 7, 2 ],
+        expects   => $TEST_CONFIG->{connect_info}{SLAVE3},
+    );
+
+    test_connect_info(
+        desc      => 'List strategy (key: 7, 3)',
+        resolver  => $resolver,
+        node      => 'ALIAS_LIST_CLUSTER',
+        node_args => [ 7, 3 ],
+        expects   => $TEST_CONFIG->{connect_info}{SLAVE4},
+    );
+
+    for my $key ( 0 .. 9 ) {
+        test_connect_info(
+            desc      => "Range strategy (key: $key)",
+            resolver  => $resolver,
+            node      => 'RANGE_CLUSTER',
+            node_args => $key,
+            expects   => $TEST_CONFIG->{connect_info}{SLAVE1},
+        );
+    }
+
+    for my $key ( 10 .. 19 ) {
+        test_connect_info(
+            desc      => "Range strategy (key: $key)",
+            resolver  => $resolver,
+            node      => 'RANGE_CLUSTER',
+            node_args => $key,
+            expects   => $TEST_CONFIG->{connect_info}{SLAVE2},
+        );
+    }
+
+    for my $key ( 20 .. 29 ) {
+        test_connect_info(
+            desc      => "Range strategy (key: $key)",
+            resolver  => $resolver,
+            node      => 'RANGE_CLUSTER',
+            node_args => $key,
+            expects   => $TEST_CONFIG->{connect_info}{SLAVE3},
+        );
+    }
+
+    for my $key ( 30 .. 39 ) {
+        test_connect_info(
+            desc      => "Range strategy (key: $key)",
+            resolver  => $resolver,
+            node      => 'RANGE_CLUSTER',
+            node_args => $key,
+            expects   => $TEST_CONFIG->{connect_info}{SLAVE4},
+        );
+    }
+
+    for my $key ( 40 .. 49 ) {
+        test_connect_info(
+            desc      => "Range strategy (key: $key)",
+            resolver  => $resolver,
+            node      => 'RANGE_CLUSTER',
+            node_args => $key,
+            expects   => $TEST_CONFIG->{connect_info}{SLAVE5},
+        );
+    }
+
+    for my $key ( 50 .. 59 ) {
+        test_connect_info(
+            desc      => "Range strategy (key: $key)",
+            resolver  => $resolver,
+            node      => 'RANGE_CLUSTER',
+            node_args => $key,
+            expects   => $TEST_CONFIG->{connect_info}{SLAVE6},
+        );
+    }
 }
 
 subtest 'using connect_info as static class' => sub {
