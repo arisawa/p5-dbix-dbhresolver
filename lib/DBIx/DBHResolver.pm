@@ -12,8 +12,10 @@ use Try::Tiny;
 use UNIVERSAL::require;
 
 use DBIx::DBHResolver::Strategy::Key;
+use DBIx::DBHResolver::Strategy::List;
+use DBIx::DBHResolver::Strategy::Range;
 
-our $VERSION                   = '0.11_01';
+our $VERSION                   = '0.12';
 our $CONFIG                    = +{};
 our $DBI                       = 'DBI';
 our $DBI_CONNECT_METHOD        = 'connect';
@@ -147,7 +149,10 @@ sub clusters {
     wantarray ? @nodes : \@nodes;
 }
 
-*cluster = \&clusters;
+{
+    no warnings;
+    *cluster = \&clusters;
+}
 
 sub is_cluster {
     my ( $proto, $cluster ) = @_;
@@ -287,7 +292,11 @@ Retrieve connection info as HASHREF. \%args is same as connect().
 
 Disconnect all cached database handles.
 
-=head2 cluster($cluster)
+=head2 cluster_info($cluster)
+
+Return cluster info hash ref.
+
+=head2 clusters($cluster)
 
 Retrieve cluster member node names as Array.
 

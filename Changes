@@ -1,5 +1,13 @@
 Revision history for Perl extension DBIx::DBHResolver
 
+0.12    Tue Aug 31 13:37:30 2010
+        - Support alias handle
+        - Add Key strategy instead of Remainder (deprecated)
+        - Add List, Range strategy
+        - use Config::Any instread of YAML
+        - s/cluster/clusters/, keep cluster method but do not use it.
+        - Enable to execute 'connect_info' non cluster with args
+
 0.11    Mon Aug 23 01:41:51 2010
         - add test_requires (Test::Exception)
         - no module changes
