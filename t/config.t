@@ -4,7 +4,8 @@ use DBIx::DBHResolver;
 use FindBin;
 use Test::More;
 
-our $CONFIG_FILE = "$FindBin::Bin/db.conf.yaml";
+our $CONFIG_YAML_FILE = "$FindBin::Bin/db.conf.yaml";
+our @CONFIG_PERL_FILES = ( "$FindBin::Bin/db1.conf.perl", "$FindBin::Bin/db2.conf.perl" );
 our $CONFIG      = +{
     connect_info => {
         DB_W => {
@@ -44,23 +45,27 @@ our $CONFIG      = +{
     clusters => { DB_R => [qw(DB_R1 DB_R2)], },
 };
 
-subtest 'using as static class' => sub {
-    is_deeply( DBIx::DBHResolver->config, +{},
-        'empty config before calling load method' );
-    DBIx::DBHResolver->load($CONFIG_FILE);
-    is_deeply( DBIx::DBHResolver->config, $CONFIG, 'loaded config' );
+sub test_config {
+    my $r = shift;
+
+    is_deeply( $r->config, +{}, 'empty config before calling load method' );
+    $r->load($CONFIG_YAML_FILE);
+    is_deeply( $r->config, $CONFIG, 'loaded config from yaml file' );
+    $r->config(+{});
+    $r->load(@CONFIG_PERL_FILES);
+    is_deeply( $r->config, $CONFIG, 'loaded config from perl files' );
+
     done_testing;
+}
+
+subtest 'using as static class' => sub {
+    my $r = 'DBIx::DBHResolver';
+    test_config($r);
 };
 
 subtest 'using as object' => sub {
     my $r = DBIx::DBHResolver->new;
-
-    note explain $r->config;
-
-    is_deeply( $r->config, +{}, 'empty config before calling load method' );
-    $r->load($CONFIG_FILE);
-    is_deeply( $r->config, $CONFIG, 'loaded config' );
-    done_testing;
+    test_config($r);
 };
 
 done_testing;

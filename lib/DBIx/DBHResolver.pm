@@ -4,8 +4,10 @@ use strict;
 use warnings;
 use parent qw(Class::Accessor::Fast);
 use Carp;
+use Config::Any;
 use Data::Util qw(is_value is_array_ref is_hash_ref is_instance is_invocant);
 use DBI;
+use Hash::Merge::Simple qw(merge);
 use Try::Tiny;
 use UNIVERSAL::require;
 
@@ -37,10 +39,19 @@ sub config {
 }
 
 sub load {
-    my ( $proto, $file ) = @_;
-    croak $! unless ( -e $file && -r $file );
-    try { require YAML; } catch { croak $_ };
-    $proto->config( YAML::LoadFile($file) );
+    my ( $proto, @files ) = @_;
+    for ( @files ) {
+	croak $! unless ( -f $_ && -r $_ );
+    }
+    my $config;
+    try {
+	$config = Config::Any->load_files( +{ files => \@files, use_ext => 1, flatten_to_hash => 1, } );
+	$config = merge( @$config{@files} );
+    }
+    catch {
+	croak $_;
+    };
+    $proto->config( $config );
 }
 
 sub connect {

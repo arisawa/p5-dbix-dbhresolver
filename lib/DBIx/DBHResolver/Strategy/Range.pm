@@ -14,7 +14,7 @@ our %OPS     = (
 );
 
 sub connect_info {
-    my ( $class, $resolver, $node, $args ) = @_;
+    my ( $class, $resolver, $node_or_cluster, $args ) = @_;
     my @keys =
       is_array_ref( $args->{key} ) ? @{ $args->{key} } : ( $args->{key} );
     my $key = shift @keys;
@@ -56,10 +56,11 @@ __END__
 
 =head1 NAME
 
-DBIx::DBHResolver::Strategy::Range - write short description for DBIx::DBHResolver::Strategy::Range
+DBIx::DBHResolver::Strategy::Range - Range based strategy
 
 =head1 SYNOPSIS
 
+  use DBIx::DBHResolver;
   use DBIx::DBHResolver::Strategy::Range;
 
   my $day = 24 * 60 * 60;
@@ -85,13 +86,19 @@ DBIx::DBHResolver::Strategy::Range - write short description for DBIx::DBHResolv
 
   my $strategy = 'DBIx::DBHResolver::Strategy::List';
 
-  $strategy->connect_info( 'TIMELINE', 380 ); # return TIMELINE_ARCHIVE's connect_info
-  $strategy->connect_info( 'TIMELINE', 55 ); # return TIMELINE_YEAR's connect_info
-  $strategy->connect_info( 'TIMELINE', 0 ); # return TIMELINE_LATEST's connect_info
+  $strategy->connect_info( $resolver, 'TIMELINE', 380 ); # return TIMELINE_ARCHIVE's connect_info
+  $strategy->connect_info( $resolver, 'TIMELINE', 55 ); # return TIMELINE_YEAR's connect_info
+  $strategy->connect_info( $resolver, 'TIMELINE', 0 ); # return TIMELINE_LATEST's connect_info
 
 =head1 DESCRIPTION
 
-=head2 METHODS
+This module is range based sharding strategy. Supported operator are '>', '>=' '<', '<='.
+
+=head1 METHODS
+
+=head2 connect_info( $resolver, $node_or_cluster, $args )
+
+Return connect_info hash ref.
 
 =head1 AUTHOR
 

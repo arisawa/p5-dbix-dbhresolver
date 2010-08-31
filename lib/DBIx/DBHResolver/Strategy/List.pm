@@ -83,15 +83,21 @@ DBIx::DBHResolver::Strategy::List - write short description for DBIx::DBHResolve
 
   my $strategy = 'DBIx::DBHResolver::Strategy::List';
 
-  $strategy->connect_info( 'BLOOD', $BLOOD_TYPE{A} ); # return BLOOD_A's connect_info
-  $strategy->connect_info( 'BLOOD', $BLOOD_TYPE{B} ); # return BLOOD_B's connect_info
-  $strategy->connect_info( 'BLOOD', $BLOOD_TYPE{O} ); # return BLOOD_O's connect_info
-  $strategy->connect_info( 'BLOOD', $BLOOD_TYPE{AB} ); # return BLOOD_AB_OR_UNKNOWN's connect_info
-  $strategy->connect_info( 'BLOOD', $BLOOD_TYPE{UNKNOWN} ); # return BLOOD_AB_OR_UNKNOWN's connect_info
+  $strategy->connect_info( $resolver, 'BLOOD', $BLOOD_TYPE{A} ); # return BLOOD_A's connect_info
+  $strategy->connect_info( $resolver, 'BLOOD', $BLOOD_TYPE{B} ); # return BLOOD_B's connect_info
+  $strategy->connect_info( $resolver, 'BLOOD', $BLOOD_TYPE{O} ); # return BLOOD_O's connect_info
+  $strategy->connect_info( $resolver, 'BLOOD', $BLOOD_TYPE{AB} ); # return BLOOD_AB_OR_UNKNOWN's connect_info
+  $strategy->connect_info( $resolver, 'BLOOD', $BLOOD_TYPE{UNKNOWN} ); # return BLOOD_AB_OR_UNKNOWN's connect_info
 
 =head1 DESCRIPTION
 
-=head2 METHODS
+This module is list based sharding strategy.
+
+=head1 METHODS
+
+=head2 connect_info( $resolver, $node_or_cluster, $args )
+
+Return connect_info hash ref.
 
 =head1 AUTHOR
 

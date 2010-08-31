@@ -30,15 +30,42 @@ __END__
 
 =head1 NAME
 
-DBIx::DBHResolver::Strategy::Key - Key based sharding strategy
+DBIx::DBHResolver::Strategy::Key - Key based strategy
 
 =head1 SYNOPSIS
 
+  use DBIx::DBHResolver;
   use DBIx::DBHResolver::Strategy::Key;
+
+  my $resolver = DBIx::DBHResolver->new;
+  $resolver->config(+{
+    clusters => +{
+      MASTER => +{
+        nodes => [ qw(MASTER1 MASTER2 MASTER3) ],
+        strategy => 'Key',
+      },
+    },
+    connect_info => +{
+      MASTER1 => +{ ... },
+      MASTER2 => +{ ... },
+      MASTER3 => +{ ... },
+    },
+  });
+
+  my $strategy = 'DBIx::DBHResolver::Strategy::Key';
+  $strategy->connect_info( $resolver, 'MASTER', 3 ); # return MASTER1's connect_info
+  $strategy->connect_info( $resolver, 'MASTER', 4 ); # return MASTER2's connect_info
+  $strategy->connect_info( $resolver, 'MASTER', 5 ); # return MASTER3's connect_info
 
 =head1 DESCRIPTION
 
-=head2 METHODS
+This module is key based sharding strategy.
+
+=head1 METHODS
+
+=head2 connect_info( $resolver, $node_or_cluster, $args )
+
+Return connect_info hash ref.
 
 =head1 AUTHOR
 
