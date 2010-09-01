@@ -25,5 +25,4 @@ use_test_base;
 auto_set_repository;
 auto_include;
 
-auto_manifest;
 WriteAll;
