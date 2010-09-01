@@ -1,5 +1,6 @@
 \bRCS\b
 \bCVS\b
+^MANIFEST\.
 ^Makefile$
 ~$
 ^#
@@ -13,7 +14,8 @@
 ^t/perlcritic
 ^tools/
 \.svn/
-\.git/
 ^[^/]+\.yaml$
 ^[^/]+\.pl$
 ^\.shipit$
+^\.git/
+\.sw[po]$
