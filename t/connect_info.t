@@ -136,22 +136,25 @@ sub test_connect_info {
     my ( $desc, $resolver, $node, $node_args, $expects, $is_lives ) =
       @specs{qw/desc resolver node node_args expects is_lives/};
 
-    $is_lives = 1 unless defined $is_lives;
+    subtest $desc => sub {
+        $is_lives = 1 unless defined $is_lives;
 
-    my $conn_info;
-    if ($is_lives) {
-        lives_ok {
-            $conn_info = $resolver->connect_info( $node, $node_args );
+        my $conn_info;
+        if ($is_lives) {
+            lives_ok {
+                $conn_info = $resolver->connect_info( $node, $node_args );
+            }
+            'connect_info lives ok';
+            is_deeply( $conn_info, $expects, $desc );
         }
-        'connect_info lives ok';
-        is_deeply( $conn_info, $expects, $desc );
-    }
-    else {
-        dies_ok {
-            $conn_info = $resolver->connect_info( $node, $node_args );
+        else {
+            dies_ok {
+                $conn_info = $resolver->connect_info( $node, $node_args );
+            }
+            'connect_info dies ok';
         }
-        'connect_info dies ok';
-    }
+        done_testing;
+    };
 }
 
 sub run_all_tests {

@@ -15,7 +15,7 @@ use DBIx::DBHResolver::Strategy::Key;
 use DBIx::DBHResolver::Strategy::List;
 use DBIx::DBHResolver::Strategy::Range;
 
-our $VERSION                   = '0.12';
+our $VERSION                   = '0.13';
 our $CONFIG                    = +{};
 our $DBI                       = 'DBI';
 our $DBI_CONNECT_METHOD        = 'connect';
@@ -88,29 +88,35 @@ sub disconnect_all {
 sub connect_info {
     my ( $proto, $cluster_or_node, $args ) = @_;
 
+    my ( $resolved_node ) = $proto->resolve( $cluster_or_node, $args );
+    return $proto->config->{connect_info}{$resolved_node};
+}
+
+sub resolve {
+    my ( $proto, $cluster_or_node, $args ) = @_;
+
     if ( $proto->is_node($cluster_or_node) ) {
-        croak sprintf( 'not found connect_info: %s', $cluster_or_node )
-          unless ( exists $proto->config->{connect_info}{$cluster_or_node} );
-        my $connect_info = $proto->config->{connect_info}{$cluster_or_node};
-        if ( ref $connect_info eq 'HASH' ) {
-            return $connect_info;
+	my $connect_info = $proto->config->{connect_info}{$cluster_or_node};
+        if ( is_hash_ref($connect_info) ) {
+            return $cluster_or_node;
         }
         else {
-            return $proto->connect_info($connect_info);
+            return $connect_info;
         }
     }
     elsif ( $proto->is_cluster($cluster_or_node) ) {
-        if ( is_hash_ref $args ) {
+        if ( is_hash_ref($args) ) {
             croak q|args has not 'strategy' field| unless $args->{strategy};
             my $strategy_class =
               $proto->_resolve_namespace( $args->{strategy} );
-            return $proto->_ensure_class_loaded($strategy_class)
-              ->connect_info( $proto, $cluster_or_node, $args );
+            my ( $resolved_node, @keys ) = $proto->_ensure_class_loaded($strategy_class)
+		->resolve( $proto, $cluster_or_node, $args );
+	    return $proto->resolve( $resolved_node, \@keys );
         }
         else {
             my $cluster_info = $proto->cluster_info($cluster_or_node);
             if ( is_array_ref $cluster_info ) {
-                return DBIx::DBHResolver::Strategy::Key->connect_info(
+                my ( $resolved_node, @keys ) =  DBIx::DBHResolver::Strategy::Key->resolve(
                     $proto,
                     $cluster_or_node,
                     +{
@@ -119,19 +125,41 @@ sub connect_info {
                         key      => $args,
                     }
                 );
+		return $proto->resolve( $resolved_node, \@keys );
             }
             elsif ( is_hash_ref $cluster_info ) {
                 my $strategy_class =
                   $proto->_resolve_namespace( $cluster_info->{strategy} );
-                return $proto->_ensure_class_loaded($strategy_class)
-                  ->connect_info( $proto, $cluster_or_node,
+                my ( $resolved_node, @keys ) = $proto->_ensure_class_loaded($strategy_class)
+                  ->resolve( $proto, $cluster_or_node,
                     +{ %$cluster_info, key => $args, } );
+		return $proto->resolve( $resolved_node, \@keys );
             }
         }
     }
     else {
         croak sprintf( '%s is not defined', $cluster_or_node );
     }
+}
+
+sub resolve_node_keys {
+    my ( $proto, $cluster_or_node, $keys, $args ) = @_;
+    my %node_keys;
+    for my $key ( @$keys ) {
+	if ( is_hash_ref $args ) {
+	    $args->{strategy} ||= 'Key';
+	    $args->{key} = $key;
+	}
+	else {
+	    $args = $key;
+	}
+	
+	my $resolved_node = $proto->resolve( $cluster_or_node, $args );
+	$node_keys{$resolved_node} ||= [];
+	push(@{$node_keys{$resolved_node}}, $key);
+    }
+
+    return wantarray ? %node_keys : \%node_keys;
 }
 
 sub cluster_info {
@@ -263,9 +291,10 @@ Load config. Example config (perl hash reference format):
     },
   }
 
-=head2 connect( $cluster_or_node, \%args )
+=head2 connect( $cluster_or_node, $args )
 
-Retrieve database handle. See below about \%args details.
+Retrieve database handle. If $args is scalar or array reference, then $args is treated sharding key.
+If $args is hash reference, then see below.
 
 =over
 
@@ -280,13 +309,45 @@ Optional parameter. Strategy module uses hint choosing node.
 
 =back
 
-=head2 connect_cached($cluster_or_node, \%args)
+=head2 connect_cached($cluster_or_node, $args)
 
-Retrieve database handle from own cache, if not exists cache then using DBI::connect(). \%args is same as connect().
+Retrieve database handle from own cache, if not exists cache then using DBI::connect(). $args is same as connect().
 
-=head2 connect_info($cluster_or_node, \%args)
+=head2 connect_info($cluster_or_node, $args)
 
-Retrieve connection info as HASHREF. \%args is same as connect().
+Retrieve connection info as HASHREF. $args is same as connect().
+
+=head2 resolve($cluster_or_node, $args)
+
+Return resolved node name. $args is same as connect.
+
+=head2 resolve_node_keys($cluster_or_node, $keys, $args)
+
+Return hash resolved node and keys. $args is same as connect
+
+  use DBIx::DBHResolver;
+
+  my $resolver = DBIx::DBHResolver->new;
+  $resolver->config(+{
+    clusters => +{
+      MASTER => +{
+        nodes => [qw/MASTER001 MASTER002 MASTER003/],
+        strategy => 'Key',
+      }
+    },
+    connect_info => +{
+      MASTER001 => +{ ... },
+      MASTER002 => +{ ... },
+      MASTER003 => +{ ... },
+    },
+  });
+
+  my @keys = ( 3 .. 8 );
+  my %node_keys = $resolver->resolve_node_keys( 'MASTER', \@keys );
+  ### %node_keys = ( MASTER001 => [ 3, 6 ], MASTER002 => [ 4, 7 ], MASTER003 => [ 5, 7 ] )
+  while ( my ( $node, $keys ) = each %node_keys ) {
+      process_node( $node, $keys );
+  }
 
 =head2 disconnect_all()
 
@@ -381,3 +442,12 @@ This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
+
+# Local Variables:
+# mode: perl
+# perl-indent-level: 4
+# indent-tabs-mode: nil
+# coding: utf-8-unix
+# End:
+#
+# vim: expandtab shiftwidth=4:

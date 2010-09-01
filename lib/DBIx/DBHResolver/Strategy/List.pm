@@ -2,17 +2,26 @@ package DBIx::DBHResolver::Strategy::List;
 
 use strict;
 use warnings;
+use parent qw(DBIx::DBHResolver::Strategy);
 use Carp;
 use Data::Util qw(is_hash_ref is_array_ref);
 
 our $VERSION = '0.01';
 
 sub connect_info {
-    my ( $class, $resolver, $node, $args ) = @_;
-    my @keys =
-      is_array_ref( $args->{key} ) ? @{ $args->{key} } : ( $args->{key} );
-    my $key = shift @keys;
+    my ( $class, $resolver, $node_or_cluster, $args ) = @_;
+    my ($resolved_node, @keys) =
+      $class->resolve( $resolver, $node_or_cluster, $args );
 
+    return $resolver->connect_info( $resolved_node, \@keys );
+}
+
+sub resolve {
+    my ( $class, $resolver, $node_or_cluster, $args ) = @_;
+
+    my @keys = $class->keys_from_args($args);
+    my $key = shift @keys;
+    
     unless ( exists $args->{list_map} ) {
         unless ( exists $args->{strategy_config}
             && is_hash_ref( $args->{strategy_config} ) )
@@ -34,8 +43,7 @@ sub connect_info {
     }
 
     my $resolved_node = $args->{list_map}{$key};
-
-    return $resolver->connect_info( $resolved_node, \@keys );
+    return ( $resolved_node, @keys );
 }
 
 1;
@@ -98,6 +106,10 @@ This module is list based sharding strategy.
 =head2 connect_info( $resolver, $node_or_cluster, $args )
 
 Return connect_info hash ref.
+
+=head2 resolve( $resolver, $node_or_cluster, $key, $args )
+
+Return resolved node_or_cluster name.
 
 =head1 AUTHOR
 
