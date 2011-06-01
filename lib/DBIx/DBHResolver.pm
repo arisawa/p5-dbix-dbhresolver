@@ -284,7 +284,7 @@ See L<DBIx::DBHResolver::Strategy::Key>.
 
 =head2 connect_info format
 
-B<connect_info> is node infomation to connect it. Following fields are recognized.
+B<connect_info> is node information to connect it. Following fields are recognized.
 
   my $connect_info = +{
     dsn => 'dbi:mysql:db=test',

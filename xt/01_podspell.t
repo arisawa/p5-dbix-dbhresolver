@@ -17,3 +17,5 @@ YAML
 yaml
 DBI
 ref
+attrs
+dsn
