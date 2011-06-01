@@ -15,8 +15,8 @@ use DBIx::DBHResolver::Strategy::Key;
 use DBIx::DBHResolver::Strategy::List;
 use DBIx::DBHResolver::Strategy::Range;
 
-our $VERSION                   = '0.13';
-our $CONFIG                    = +{};
+our $VERSION                   = '0.15';
+our $CONFIG                    = +{ connect_info => +{}, cluster_info => +{} };
 our $DBI                       = 'DBI';
 our $DBI_CONNECT_METHOD        = 'connect';
 our $DBI_CONNECT_CACHED_METHOD = 'connect_cached';
@@ -24,7 +24,8 @@ our $DBI_CONNECT_CACHED_METHOD = 'connect_cached';
 __PACKAGE__->mk_accessors(qw/_config/);
 
 sub new {
-    shift->SUPER::new( +{ _config => +{} } );
+    shift->SUPER::new(
+        +{ _config => +{ connect_info => +{}, cluster_info => +{} } } );
 }
 
 sub config {
@@ -42,18 +43,19 @@ sub config {
 
 sub load {
     my ( $proto, @files ) = @_;
-    for ( @files ) {
-	croak $! unless ( -f $_ && -r $_ );
+    for (@files) {
+        croak $! unless ( -f $_ && -r $_ );
     }
     my $config;
     try {
-	$config = Config::Any->load_files( +{ files => \@files, use_ext => 1, flatten_to_hash => 1, } );
-	$config = merge( @$config{@files} );
+        $config = Config::Any->load_files(
+            +{ files => \@files, use_ext => 1, flatten_to_hash => 1, } );
+        $config = merge( @$config{@files} );
     }
     catch {
-	croak $_;
+        croak $_;
     };
-    $proto->config( $config );
+    $proto->config($config);
 }
 
 sub connect {
@@ -88,35 +90,28 @@ sub disconnect_all {
 sub connect_info {
     my ( $proto, $cluster_or_node, $args ) = @_;
 
-    my ( $resolved_node ) = $proto->resolve( $cluster_or_node, $args );
-    return $proto->config->{connect_info}{$resolved_node};
+    my ($resolved_node) = $proto->resolve( $cluster_or_node, $args );
+    return $proto->node_info($resolved_node);
 }
 
 sub resolve {
     my ( $proto, $cluster_or_node, $args ) = @_;
 
-    if ( $proto->is_node($cluster_or_node) ) {
-	my $connect_info = $proto->config->{connect_info}{$cluster_or_node};
-        if ( is_hash_ref($connect_info) ) {
-            return $cluster_or_node;
-        }
-        else {
-            return $connect_info;
-        }
-    }
-    elsif ( $proto->is_cluster($cluster_or_node) ) {
+    if ( $proto->is_cluster($cluster_or_node) ) {
         if ( is_hash_ref($args) ) {
             croak q|args has not 'strategy' field| unless $args->{strategy};
             my $strategy_class =
               $proto->_resolve_namespace( $args->{strategy} );
-            my ( $resolved_node, @keys ) = $proto->_ensure_class_loaded($strategy_class)
-		->resolve( $proto, $cluster_or_node, $args );
-	    return $proto->resolve( $resolved_node, \@keys );
+            my ( $resolved_node, @keys ) =
+              $proto->_ensure_class_loaded($strategy_class)
+              ->resolve( $proto, $cluster_or_node, $args );
+            return $proto->resolve( $resolved_node, \@keys );
         }
         else {
             my $cluster_info = $proto->cluster_info($cluster_or_node);
             if ( is_array_ref $cluster_info ) {
-                my ( $resolved_node, @keys ) =  DBIx::DBHResolver::Strategy::Key->resolve(
+                my ( $resolved_node, @keys ) =
+                  DBIx::DBHResolver::Strategy::Key->resolve(
                     $proto,
                     $cluster_or_node,
                     +{
@@ -124,17 +119,27 @@ sub resolve {
                         nodes    => $cluster_info,
                         key      => $args,
                     }
-                );
-		return $proto->resolve( $resolved_node, \@keys );
+                  );
+                return $proto->resolve( $resolved_node, \@keys );
             }
             elsif ( is_hash_ref $cluster_info ) {
                 my $strategy_class =
                   $proto->_resolve_namespace( $cluster_info->{strategy} );
-                my ( $resolved_node, @keys ) = $proto->_ensure_class_loaded($strategy_class)
+                my ( $resolved_node, @keys ) =
+                  $proto->_ensure_class_loaded($strategy_class)
                   ->resolve( $proto, $cluster_or_node,
                     +{ %$cluster_info, key => $args, } );
-		return $proto->resolve( $resolved_node, \@keys );
+                return $proto->resolve( $resolved_node, \@keys );
             }
+        }
+    }
+    elsif ( $proto->is_node($cluster_or_node) ) {
+        my $connect_info = $proto->node_info($cluster_or_node);
+        if ( is_hash_ref($connect_info) ) {
+            return $cluster_or_node;
+        }
+        else {
+            return $connect_info;
         }
     }
     else {
@@ -145,26 +150,31 @@ sub resolve {
 sub resolve_node_keys {
     my ( $proto, $cluster_or_node, $keys, $args ) = @_;
     my %node_keys;
-    for my $key ( @$keys ) {
-	if ( is_hash_ref $args ) {
-	    $args->{strategy} ||= 'Key';
-	    $args->{key} = $key;
-	}
-	else {
-	    $args = $key;
-	}
-	
-	my $resolved_node = $proto->resolve( $cluster_or_node, $args );
-	$node_keys{$resolved_node} ||= [];
-	push(@{$node_keys{$resolved_node}}, $key);
+    for my $key (@$keys) {
+        if ( is_hash_ref $args ) {
+            $args->{strategy} ||= 'Key';
+            $args->{key} = $key;
+        }
+        else {
+            $args = $key;
+        }
+
+        my $resolved_node = $proto->resolve( $cluster_or_node, $args );
+        $node_keys{$resolved_node} ||= [];
+        push( @{ $node_keys{$resolved_node} }, $key );
     }
 
     return wantarray ? %node_keys : \%node_keys;
 }
 
 sub cluster_info {
-    my ( $proto, $cluster ) = @_;
-    $proto->config->{clusters}{$cluster};
+    my ( $proto, $cluster, $cluster_info ) = @_;
+    if ( defined $cluster_info ) {
+        $proto->config->{clusters}{$cluster} = $cluster_info;
+    }
+    else {
+        return $proto->config->{clusters}{$cluster};
+    }
 }
 
 sub clusters {
@@ -185,6 +195,16 @@ sub clusters {
 sub is_cluster {
     my ( $proto, $cluster ) = @_;
     exists $proto->config->{clusters}{$cluster} ? 1 : 0;
+}
+
+sub node_info {
+    my ( $proto, $node, $node_info ) = @_;
+    if ( defined $node_info ) {
+        $proto->config->{connect_info}{$node} = $node_info;
+    }
+    else {
+        return $proto->config->{connect_info}{$node};
+    }
 }
 
 sub is_node {
@@ -261,6 +281,42 @@ DBIx::DBHResolver is able to use as instance or static class.
 =head2 USING STRATEGY, MAKING CUSTOM STRATEGY
 
 See L<DBIx::DBHResolver::Strategy::Key>.
+
+=head2 connect_info format
+
+B<connect_info> is node infomation to connect it. Following fields are recognized.
+
+  my $connect_info = +{
+    dsn => 'dbi:mysql:db=test',
+    user => 'root',
+    password => '',
+    attrs => +{ RaiseError => 1, AutoCommit => 0 },
+    opts => +{},
+  };
+
+=over
+
+=item dsn
+
+string value. dsn is connection information used by L<DBI>'s connect() method.
+
+=item user
+
+string value. user is database access user used by L<DBI>'s connect() method. 
+
+=item password
+
+string value. user is database access password used by L<DBI>'s connect() method. 
+
+=item attrs
+
+hash reference value. attrs is optional parameter used by L<DBI>'s connect() method.
+
+=item opts
+
+hash reference value. opts is optional parameter used by this module.
+
+=back
 
 =head1 METHODS
 

@@ -34,15 +34,29 @@ sub resolve {
                 my $node = $_;
                 map { $_ => $node } @{ $args->{strategy_config}{$node} }
               }
+              grep { length $_ > 0 }
               keys %$strategy_config
         };
+
+        if ( exists $strategy_config->{""} ) {
+            $args->{list_fallback} ||= $strategy_config->{""};
+        }
     }
 
-    unless ( exists $args->{list_map}{$key} ) {
-        croak sprintf( q|The key '%d' has not route|, $key );
+    if ( !exists $args->{list_fallback}  && !exists $args->{list_map}{$key} ) {
+        croak sprintf( q|Not exists fallback, The key '%d' has not route|, $key );
     }
 
-    my $resolved_node = $args->{list_map}{$key};
+    my $resolved_node;
+
+    if ( exists $args->{list_map}{$key} ) {
+        $resolved_node = $args->{list_map}{$key};
+    }
+    else {
+        $resolved_node = $args->{list_fallback};
+        unshift( @keys, $key );
+    }
+
     return ( $resolved_node, @keys );
 }
 
