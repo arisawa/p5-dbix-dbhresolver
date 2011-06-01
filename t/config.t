@@ -48,7 +48,7 @@ our $CONFIG      = +{
 sub test_config {
     my $r = shift;
 
-    is_deeply( $r->config, +{ connect_info => +{}, cluster_info => +{} }, 'empty config before calling load method' );
+    is_deeply( $r->config, +{}, 'empty config before calling load method' );
     $r->load($CONFIG_YAML_FILE);
     is_deeply( $r->config, $CONFIG, 'loaded config from yaml file' );
     $r->config(+{});

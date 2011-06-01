@@ -15,8 +15,8 @@ use DBIx::DBHResolver::Strategy::Key;
 use DBIx::DBHResolver::Strategy::List;
 use DBIx::DBHResolver::Strategy::Range;
 
-our $VERSION                   = '0.15';
-our $CONFIG                    = +{ connect_info => +{}, cluster_info => +{} };
+our $VERSION                   = '0.16';
+our $CONFIG                    = +{};
 our $DBI                       = 'DBI';
 our $DBI_CONNECT_METHOD        = 'connect';
 our $DBI_CONNECT_CACHED_METHOD = 'connect_cached';
@@ -25,7 +25,7 @@ __PACKAGE__->mk_accessors(qw/_config/);
 
 sub new {
     shift->SUPER::new(
-        +{ _config => +{ connect_info => +{}, cluster_info => +{} } } );
+        +{ _config => +{} } );
 }
 
 sub config {
