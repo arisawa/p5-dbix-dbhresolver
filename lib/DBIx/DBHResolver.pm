@@ -15,7 +15,7 @@ use DBIx::DBHResolver::Strategy::Key;
 use DBIx::DBHResolver::Strategy::List;
 use DBIx::DBHResolver::Strategy::Range;
 
-our $VERSION                   = '0.16';
+our $VERSION                   = '0.17';
 our $CONFIG                    = +{};
 our $DBI                       = 'DBI';
 our $DBI_CONNECT_METHOD        = 'connect';

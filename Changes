@@ -1,5 +1,8 @@
 Revision history for Perl extension DBIx::DBHResolver
 
+0.14    Mon Oct 22 00:26:28 2012
+        - Upgrade Module::Install (No code changes)
+
 0.13    Wed Sep  1 19:16:22 2010
         - add resolve, resolve_node_keys methods
         - add strategy base class
