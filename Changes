@@ -1,6 +1,6 @@
 Revision history for Perl extension DBIx::DBHResolver
 
-0.14    Mon Oct 22 00:26:28 2012
+0.17    Mon Oct 22 00:26:28 2012
         - Upgrade Module::Install (No code changes)
 
 0.13    Wed Sep  1 19:16:22 2010

@@ -27,9 +27,12 @@ lib/DBIx/DBHResolver/Strategy/Key.pm
 lib/DBIx/DBHResolver/Strategy/List.pm
 lib/DBIx/DBHResolver/Strategy/Range.pm
 lib/DBIx/DBHResolver/Strategy/Remainder.pm
+lib/DBIx/DBHResolver/Strategy/RoundRobin.pm
 Makefile.PL
 MANIFEST			This list of files
 META.yml
+MYMETA.json
+MYMETA.yml
 README
 t/cluster.t
 t/compile.t
@@ -39,6 +42,7 @@ t/connect_info.t
 t/db.conf.yaml
 t/db1.conf.perl
 t/db2.conf.perl
+t/fallback.t
 t/resolve_node_keys.t
 xt/01_podspell.t
 xt/02_perlcritic.t
